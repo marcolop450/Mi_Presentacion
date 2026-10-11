@@ -33,7 +33,7 @@ export default function HeroBanner() {
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
             INNOVACIÓN EN RAZONAMIENTO E{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500">
+            <span className="text-cyan-400">
               INTELIGENCIA DE SISTEMAS
             </span>
           </h1>

@@ -315,7 +315,7 @@ export default function AdminDashboardPage() {
       {/* Área de Contenido Principal */}
       <main className="flex-1 p-6 sm:p-8 lg:p-10 overflow-y-auto">
         {notification && (
-          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-emerald-950 border border-emerald-500/40 text-emerald-200 text-xs shadow-2xl flex items-center gap-2 animate-bounce">
+          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-emerald-950 border border-emerald-500/40 text-emerald-200 text-xs shadow-2xl flex items-center gap-2 transition-all duration-300 ease-out">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{notification}</span>
           </div>
