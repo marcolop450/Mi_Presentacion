@@ -5,26 +5,28 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f8fafc;
-  --fg: #0f172a;
-  --surface: rgba(255, 255, 255, 0.92);
-  --surface-border: rgba(226, 232, 240, 0.8);
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
+  --bg: #f0fdfa;
+  --fg: #0f292e;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface-border: #ccfbf1;
+  --accent: #0d9488;
+  --accent-mint: #10b981;
+  --accent-hover: #0f766e;
 }
 
 .dark {
-  --bg: #060b14;
-  --fg: #f1f5f9;
-  --surface: rgba(15, 23, 42, 0.75);
-  --surface-border: rgba(30, 41, 59, 0.6);
-  --accent: #38bdf8;
-  --accent-hover: #7dd3fc;
+  --bg: #061317;
+  --fg: #f0fdfa;
+  --surface: rgba(10, 31, 37, 0.85);
+  --surface-border: rgba(20, 72, 84, 0.7);
+  --accent: #2dd4bf;
+  --accent-mint: #10b981;
+  --accent-hover: #5eead4;
 }
 
 body {
   color: var(--fg);
-  background: var(--bg);
+  background-color: var(--bg);
   font-family: 'Urbanist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
@@ -39,7 +41,7 @@ code, kbd, samp, pre, .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Scrollbar — themed from the palette */
+/* Scrollbar — themed from tropical/cool palette */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -48,23 +50,28 @@ code, kbd, samp, pre, .font-mono {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #99f6e4;
   border-radius: 3px;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #134e4a;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #2dd4bf;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #14b8a6;
 }
 
 /* Selection */
 ::selection {
-  background: #2563eb;
-  color: #fff;
+  background: #0d9488;
+  color: #ffffff;
+}
+
+.dark ::selection {
+  background: #14b8a6;
+  color: #042f2e;
 }
 
 /* Focus ring */
@@ -86,7 +93,7 @@ code, kbd, samp, pre, .font-mono {
 }
 
 .animate-page-enter {
-  animation: pageEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
 }
 

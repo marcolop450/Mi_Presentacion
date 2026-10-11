@@ -9,6 +9,7 @@ interface Particle {
   vx: number;
   vy: number;
   radius: number;
+  color: string;
   alpha: number;
 }
 
@@ -49,8 +50,14 @@ export default function AnimatedBackground() {
     window.addEventListener("resize", handleResize);
 
     const isDark = theme === "dark";
-    const particleCount = Math.min(60, Math.floor((width * height) / 24000) + 15);
-    const maxConnectionDistance = 140;
+
+    // Tropical & Cool Palette Colors (Mint, Emerald, Teal, Aqua)
+    const tropicalColors = isDark
+      ? ["#2dd4bf", "#10b981", "#06b6d4", "#34d399", "#5eead4"]
+      : ["#0d9488", "#059669", "#0891b2", "#10b981", "#14b8a6"];
+
+    const particleCount = Math.min(65, Math.floor((width * height) / 20000) + 20);
+    const maxConnectionDistance = 150;
 
     let particles: Particle[] = [];
     const pulses: Pulse[] = [];
@@ -61,16 +68,17 @@ export default function AnimatedBackground() {
         particles.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          radius: Math.random() * 2 + 1,
-          alpha: Math.random() * 0.5 + 0.25,
+          vx: (Math.random() - 0.5) * 0.6,
+          vy: (Math.random() - 0.5) * 0.6,
+          radius: Math.random() * 2.2 + 1.2,
+          color: tropicalColors[Math.floor(Math.random() * tropicalColors.length)],
+          alpha: Math.random() * 0.45 + 0.35,
         });
       }
     };
     initParticles();
 
-    // Mouse tracking for subtle attraction
+    // Mouse coordinates for gentle interactive attraction
     let mouseX = -1000;
     let mouseY = -1000;
     const handleMouseMove = (e: MouseEvent) => {
@@ -88,8 +96,8 @@ export default function AnimatedBackground() {
 
       ctx.clearRect(0, 0, width, height);
 
-      // Periodically trigger a data pulse along a connection
-      if (Math.random() < 0.05 && pulses.length < 8) {
+      // Periodically trigger a data packet pulse along a connection
+      if (Math.random() < 0.06 && pulses.length < 8) {
         const fromIdx = Math.floor(Math.random() * particles.length);
         for (let j = 0; j < particles.length; j++) {
           if (fromIdx !== j) {
@@ -102,7 +110,7 @@ export default function AnimatedBackground() {
                 fromIdx,
                 toIdx: j,
                 progress: 0,
-                speed: 0.9 + Math.random() * 0.8,
+                speed: 1.0 + Math.random() * 0.8,
               });
               break;
             }
@@ -116,21 +124,21 @@ export default function AnimatedBackground() {
         p.x += p.vx;
         p.y += p.vy;
 
-        // Bounce on boundaries
+        // Bounce on borders
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Gentle interactive mouse push
+        // Interactive mouse repulsion/ripple
         const distToMouse = Math.hypot(p.x - mouseX, p.y - mouseY);
-        if (distToMouse < 110 && distToMouse > 0) {
-          const force = (110 - distToMouse) / 110;
+        if (distToMouse < 120 && distToMouse > 0) {
+          const force = (120 - distToMouse) / 120;
           const angle = Math.atan2(p.y - mouseY, p.x - mouseX);
-          p.x += Math.cos(angle) * force * 1.2;
-          p.y += Math.sin(angle) * force * 1.2;
+          p.x += Math.cos(angle) * force * 1.5;
+          p.y += Math.sin(angle) * force * 1.5;
         }
       }
 
-      // 2. Draw connections (synapses)
+      // 2. Draw synaptical connections between particles
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -139,11 +147,11 @@ export default function AnimatedBackground() {
 
           if (dist < maxConnectionDistance) {
             const strength = 1 - dist / maxConnectionDistance;
-            const alpha = strength * (isDark ? 0.28 : 0.18);
+            const alpha = strength * (isDark ? 0.35 : 0.22);
             ctx.strokeStyle = isDark
-              ? `rgba(0, 240, 255, ${alpha.toFixed(3)})`
-              : `rgba(37, 99, 235, ${alpha.toFixed(3)})`;
-            ctx.lineWidth = strength * 1.2;
+              ? `rgba(45, 212, 191, ${alpha.toFixed(3)})`
+              : `rgba(13, 148, 136, ${alpha.toFixed(3)})`;
+            ctx.lineWidth = strength * 1.3;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
@@ -169,28 +177,29 @@ export default function AnimatedBackground() {
         const pulseX = p1.x + (p2.x - p1.x) * pulse.progress;
         const pulseY = p1.y + (p2.y - p1.y) * pulse.progress;
 
-        ctx.fillStyle = isDark ? "#00f0ff" : "#2563eb";
+        // Glowing packet dot
+        ctx.fillStyle = isDark ? "#5eead4" : "#0f766e";
         ctx.beginPath();
-        ctx.arc(pulseX, pulseY, 2.5, 0, Math.PI * 2);
+        ctx.arc(pulseX, pulseY, 3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Subtle glow aura around pulse
-        ctx.fillStyle = isDark ? "rgba(0, 240, 255, 0.3)" : "rgba(37, 99, 235, 0.25)";
+        // Packet aura
+        ctx.fillStyle = isDark ? "rgba(45, 212, 191, 0.45)" : "rgba(13, 148, 136, 0.35)";
         ctx.beginPath();
-        ctx.arc(pulseX, pulseY, 6, 0, Math.PI * 2);
+        ctx.arc(pulseX, pulseY, 7, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // 4. Draw particle nodes
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
-        ctx.fillStyle = isDark
-          ? `rgba(56, 189, 248, ${p.alpha.toFixed(2)})`
-          : `rgba(2, 132, 199, ${p.alpha.toFixed(2)})`;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.globalAlpha = 1.0;
 
       animId = requestAnimationFrame(render);
     };
@@ -210,20 +219,25 @@ export default function AnimatedBackground() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 -z-20 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     >
-      {/* 60fps Interactive Neural/Synaptic Constellation Canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      {/* 60fps Tropical Synaptic Neural Constellation Canvas */}
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
 
-      {/* Atmospheric Ambient Glow Blobs */}
+      {/* Tropical & Cool Ambient Glow Auroras (Teal, Mint, Aqua) */}
       <div
-        className={`absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none transition-colors duration-700 ${
-          isDark ? "bg-blue-600/12" : "bg-sky-400/15"
+        className={`absolute -top-32 -left-32 w-[540px] h-[540px] rounded-full blur-[140px] pointer-events-none transition-colors duration-700 ${
+          isDark ? "bg-teal-500/15" : "bg-emerald-300/25"
         }`}
       />
       <div
-        className={`absolute top-1/2 -right-32 w-[550px] h-[550px] rounded-full blur-[160px] pointer-events-none transition-colors duration-700 ${
-          isDark ? "bg-cyan-500/10" : "bg-blue-500/10"
+        className={`absolute top-1/2 -right-32 w-[580px] h-[580px] rounded-full blur-[160px] pointer-events-none transition-colors duration-700 ${
+          isDark ? "bg-emerald-500/12" : "bg-teal-300/20"
+        }`}
+      />
+      <div
+        className={`absolute -bottom-32 left-1/3 w-[500px] h-[500px] rounded-full blur-[150px] pointer-events-none transition-colors duration-700 ${
+          isDark ? "bg-cyan-600/10" : "bg-teal-200/20"
         }`}
       />
     </div>

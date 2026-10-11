@@ -69,9 +69,9 @@ export default function MouseFollower() {
     document.addEventListener("mouseleave", handleMouseLeave);
 
     const isDark = theme === "dark";
-    // Slate-400 for light mode, Slate-500 for dark mode
-    const headColor = isDark ? "#64748B" : "#94A3B8";
-    const rgbBase = isDark ? "100, 116, 139" : "148, 163, 184";
+    // Tropical Mint (#2DD4BF) for dark mode, Tropical Teal (#0D9488) for light mode
+    const headColor = isDark ? "#2dd4bf" : "#0d9488";
+    const rgbBase = isDark ? "45, 212, 191" : "13, 148, 136";
     const headRadius = 3;
     const maxHeadDiameter = headRadius * 2;
 

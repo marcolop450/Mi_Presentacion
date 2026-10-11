@@ -11,15 +11,15 @@ export default async function SobreMiPage() {
   const socialLinks = await getSocialLinks();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#060B14] flex flex-col transition-colors duration-200">
+    <div className="min-h-screen flex flex-col transition-colors duration-200">
       <Navbar />
-      <main className="flex-grow pt-8 pb-16">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+      <main className="flex-grow pt-6 pb-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mb-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-white transition"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-teal-700 hover:text-teal-900 dark:text-teal-300 dark:hover:text-white transition px-3 py-1.5 rounded-xl bg-teal-50/80 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800/60 w-fit"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>Volver al Inicio</span>
           </Link>
         </div>

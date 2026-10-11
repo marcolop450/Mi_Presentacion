@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "KIRIS | Innovación en Razonamiento e Inteligencia de Sistemas",
   description: "Plataforma oficial de KIRIS - Inteligencia Artificial para el día a día. Recursos, auxiliaturas académicas y recomendaciones seleccionadas por Marco Alejandro Lopez Velasquez.",
   icons: {
-    icon: "/images/logo_kiris.svg",
+    icon: "/images/logo_kiris.png",
   },
 };
 
@@ -45,11 +45,15 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-slate-50 text-slate-900 dark:bg-[#060B14] dark:text-white min-h-screen antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200 relative flex flex-col">
+      <body className="bg-[#f0fdfa] text-slate-900 dark:bg-[#061317] dark:text-[#f0fdfa] min-h-screen antialiased selection:bg-teal-500 selection:text-white transition-colors duration-200 relative flex flex-col">
         <ThemeProvider>
+          {/* Animated Background at z-0 */}
           <AnimatedBackground />
           <MouseFollower />
-          {children}
+          {/* Content layer above the animated background */}
+          <div className="relative z-10 flex flex-col flex-grow w-full">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>

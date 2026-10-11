@@ -12,6 +12,7 @@ import {
   Cpu,
   BookOpen,
   Inbox,
+  Sparkles,
 } from "lucide-react";
 
 interface RecommendationsSectionProps {
@@ -49,45 +50,48 @@ export default function RecommendationsSection({
   };
 
   return (
-    <section id="recomendaciones" className="py-20 border-t border-slate-200 dark:border-slate-800 transition-colors duration-200">
+    <section className="py-12 md:py-16">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Cabecera */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-teal-200/60 dark:border-teal-900/60">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tighter">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/70 border border-teal-200 dark:border-teal-800/80 text-teal-700 dark:text-teal-300 text-xs font-mono font-semibold mb-3">
+              <span>NEXUS // RECURSOS &amp; IA</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
               Recursos y Recomendaciones
-            </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-[65ch]">
-              Herramientas, plataformas, bibliografía y canales seleccionados para desarrollo e ingeniería de software.
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-teal-100/70 mt-2 max-w-[65ch]">
+              Herramientas de desarrollo, canales científicos, papers y librerías modernas de IA seleccionadas.
             </p>
           </div>
         </div>
 
         {/* Estado inicial sin recomendaciones */}
         {initialRecommendations.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl p-8 max-w-md mx-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-500 dark:text-slate-400">
+          <div className="text-center py-16 rounded-3xl p-8 max-w-md mx-auto border border-teal-200/80 dark:border-teal-900/60 bg-white/80 dark:bg-[#0a2026]/80 backdrop-blur-sm shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/80 border border-teal-200 dark:border-teal-800/80 flex items-center justify-center mx-auto mb-4 text-teal-600 dark:text-teal-300">
               <Inbox className="w-6 h-6" />
             </div>
             <h3 className="text-base font-display font-bold text-slate-900 dark:text-white">
               Aún no hay recomendaciones registradas
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-              Los recursos y plataformas de referencia aparecerán aquí una vez que sean agregados en el panel.
+            <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-2 leading-relaxed">
+              Las recomendaciones seleccionadas aparecerán aquí una vez agregadas en el panel administrativo.
             </p>
           </div>
         ) : (
           <>
-            {/* Controles: Categorías y Buscador */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
-              {/* Filtros de Categorías */}
+            {/* Controles: Categorías estilo roxs.dev (Pills redondeadas) y Buscador */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-8">
+              {/* Pills de Categoría */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setActiveCategoryId("all")}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
                     activeCategoryId === "all"
-                      ? "bg-blue-600 text-white dark:bg-sky-500 dark:text-slate-950 font-semibold"
-                      : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                      ? "bg-teal-600 text-white shadow-teal-600/25 scale-[1.02]"
+                      : "bg-white/80 dark:bg-[#0a2026]/80 text-slate-700 dark:text-teal-200/80 border border-teal-200/80 dark:border-teal-900/60 hover:bg-teal-50 dark:hover:bg-teal-950"
                   }`}
                 >
                   Todas
@@ -96,10 +100,10 @@ export default function RecommendationsSection({
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategoryId(cat.id)}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
                       activeCategoryId === cat.id
-                        ? "bg-blue-600 text-white dark:bg-sky-500 dark:text-slate-950 font-semibold"
-                        : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                        ? "bg-teal-600 text-white shadow-teal-600/25 scale-[1.02]"
+                        : "bg-white/80 dark:bg-[#0a2026]/80 text-slate-700 dark:text-teal-200/80 border border-teal-200/80 dark:border-teal-900/60 hover:bg-teal-50 dark:hover:bg-teal-950"
                     }`}
                   >
                     {getCategoryIcon(cat.slug)}
@@ -109,14 +113,14 @@ export default function RecommendationsSection({
               </div>
 
               {/* Buscador */}
-              <div className="relative w-full md:w-72">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <div className="relative w-full lg:w-72">
+                <Search className="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Filtrar recursos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-blue-600 dark:focus:border-sky-400 transition"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/80 dark:bg-[#0a2026]/80 border border-teal-200/80 dark:border-teal-900/60 text-slate-900 dark:text-white text-xs placeholder-teal-600/50 dark:placeholder-teal-400/50 focus:outline-none focus:border-teal-500 transition shadow-sm"
                   data-testid="recommendations-search"
                 />
               </div>
@@ -124,58 +128,50 @@ export default function RecommendationsSection({
 
             {/* Listado de Tarjetas o Estado Vacío */}
             {filteredRecommendations.length === 0 ? (
-              <div className="text-center py-12 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 max-w-md mx-auto">
+              <div className="text-center py-12 rounded-3xl p-6 border border-teal-200/80 dark:border-teal-900/60 bg-white/80 dark:bg-[#0a2026]/80 max-w-md mx-auto">
+                <Inbox className="w-8 h-8 text-teal-400 mx-auto mb-3" />
                 <h3 className="text-sm font-display font-bold text-slate-900 dark:text-white">
                   No se encontraron recursos
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Intenta modificando los criterios de búsqueda o seleccionando otra categoría.
+                <p className="text-xs text-slate-500 dark:text-teal-200/60 mt-1">
+                  Prueba cambiando los términos de búsqueda o seleccionando otra categoría.
                 </p>
-                <button
-                  onClick={() => {
-                    setActiveCategoryId("all");
-                    setSearchTerm("");
-                  }}
-                  className="mt-4 px-3.5 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition"
-                >
-                  Restablecer filtros
-                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {filteredRecommendations.map((rec) => (
                   <div
                     key={rec.id}
-                    className="rounded-2xl p-6 flex flex-col justify-between bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm"
+                    className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#0a2026]/90 border border-teal-200/80 dark:border-teal-900/60 hover:border-teal-400 dark:hover:border-teal-400 transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-sm"
                   >
                     <div>
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        {rec.is_featured ? (
-                          <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/70">
-                            Destacado
+                      {/* Badge Destacado */}
+                      {rec.is_featured && (
+                        <div className="mb-3">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                            <span>Destacado</span>
                           </span>
-                        ) : (
-                          <span />
-                        )}
-                      </div>
+                        </div>
+                      )}
 
-                      <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white tracking-tight">
+                      <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
                         {rec.title}
                       </h3>
 
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed line-clamp-3">
+                      <p className="text-sm text-slate-600 dark:text-teal-100/70 mt-3 leading-relaxed">
                         {rec.description}
                       </p>
 
-                      {/* Etiquetas */}
+                      {/* Etiquetas / Tags */}
                       {rec.tags && rec.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-4">
+                        <div className="flex flex-wrap gap-2 mt-4">
                           {rec.tags.map((tag) => (
                             <span
                               key={tag}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-[11px] border border-slate-200 dark:border-slate-700"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-50/70 text-teal-800 dark:bg-teal-950/70 dark:text-teal-300 text-xs font-mono border border-teal-200/60 dark:border-teal-800/60"
                             >
-                              <Tag className="w-2.5 h-2.5 opacity-60" />
+                              <Tag className="w-2.5 h-2.5 text-teal-500" />
                               {tag}
                             </span>
                           ))}
@@ -183,16 +179,16 @@ export default function RecommendationsSection({
                       )}
                     </div>
 
-                    {/* Botón de Enlace Externo */}
-                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    {/* Botón de Enlace */}
+                    <div className="mt-6 pt-4 border-t border-teal-100 dark:border-teal-900/50">
                       <a
                         href={rec.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-between w-full px-4 py-2 rounded-xl text-xs font-medium bg-slate-50 hover:bg-slate-100 dark:bg-slate-950 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-sky-400 transition border border-slate-200 dark:border-slate-800"
+                        className="inline-flex items-center justify-between w-full px-5 py-3 rounded-2xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all hover:scale-[1.01]"
                       >
-                        <span>Abrir recurso</span>
-                        <ExternalLink className="w-3.5 h-3.5 opacity-60" />
+                        <span>Abrir Recurso</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
                   </div>
