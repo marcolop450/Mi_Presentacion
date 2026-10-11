@@ -19,7 +19,7 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#060B14] flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#060B14] flex flex-col transition-colors duration-200">
       <Navbar />
       <main className="flex-grow">
         <HeroBanner />

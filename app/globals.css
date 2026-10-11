@@ -3,8 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --background: #060B14;
-  --foreground: #F8FAFC;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: #060b14;
+  --foreground: #f8fafc;
 }
 
 body {
@@ -20,14 +25,23 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #060B14;
+  background: #f1f5f9;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #060b14;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E2F52;
+  background: #cbd5e1;
   border-radius: 4px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e2f52;
+}
 ::-webkit-scrollbar-thumb:hover {
-  background: #00A3FF;
+  background: #0284c7;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #00a3ff;
 }
 
 /* Glow effects */
