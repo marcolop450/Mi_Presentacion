@@ -9,44 +9,29 @@ const config: Config = {
   darkMode: "class",
   theme: {
     extend: {
+      maxWidth: {
+        page: "1400px",
+      },
       colors: {
-        kiris: {
-          bg: "#040812",
-          surface: "#091224",
-          card: "#0D1B36",
-          border: "#172A4E",
-          borderHighlight: "#2B4780",
-          primary: "#00A3FF",
-          primaryDark: "#0077C8",
-          accent: "#38BDF8",
-          cyan: "#00F0FF",
-          slate: "#94A3B8",
-          muted: "#64748B",
+        surface: {
+          DEFAULT: "var(--surface)",
+          border: "var(--surface-border)",
         },
       },
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "system-ui", "-apple-system", "sans-serif"],
-        display: ["'Outfit'", "'Plus Jakarta Sans'", "system-ui", "sans-serif"],
+        sans: ["'Urbanist'", "system-ui", "-apple-system", "sans-serif"],
+        display: ["'Outfit'", "'Urbanist'", "system-ui", "sans-serif"],
         mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
       },
       animation: {
-        "pulse-slow": "pulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "scanline": "scanline 8s linear infinite",
-        "float": "float 6s ease-in-out infinite",
-        "shimmer": "shimmer 2.5s ease-in-out infinite",
+        "mesh-drift": "mesh-drift 30s ease-in-out infinite alternate",
       },
       keyframes: {
-        scanline: {
-          "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(1000%)" },
-        },
-        float: {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-8px)" },
-        },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
+        "mesh-drift": {
+          "0%": { transform: "translate(0, 0) scale(1)" },
+          "33%": { transform: "translate(2%, -1%) scale(1.02)" },
+          "66%": { transform: "translate(-1%, 2%) scale(0.98)" },
+          "100%": { transform: "translate(1%, -2%) scale(1.01)" },
         },
       },
     },

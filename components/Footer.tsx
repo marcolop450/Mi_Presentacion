@@ -1,61 +1,48 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Shield } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200/80 dark:border-blue-950/80 bg-white/70 dark:bg-[#030610]/80 text-slate-600 dark:text-slate-400 py-12 transition-colors duration-200 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Logo y Eslogan */}
+    <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-400 py-8 transition-colors duration-200">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white dark:bg-cyan-950/40 border border-slate-200 dark:border-cyan-500/40 p-1 flex items-center justify-center shadow-sm">
-              <Image
-                src="/images/logo_kiris.png"
-                alt="Logo KIRIS"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            </div>
-            <div>
-              <span className="font-display font-black text-slate-900 dark:text-white text-base tracking-wider">KIRIS</span>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                Innovación en Razonamiento e Inteligencia de Sistemas
-              </p>
-            </div>
+            <Image
+              src="/images/logo_kiris.png"
+              alt="Logo KIRIS"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
+            <span className="font-display font-bold text-slate-900 dark:text-white text-base tracking-tight">
+              KIRIS
+            </span>
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-700">|</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              © {new Date().getFullYear()} Marco Alejandro Lopez Velasquez. UAGRM - FICCT.
+            </p>
           </div>
 
-          {/* Enlaces de Pie de Página */}
-          <div className="flex flex-wrap items-center gap-6 text-xs font-mono">
-            <Link href="#auxiliaturas" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition">
-              // Auxiliaturas
-            </Link>
-            <Link href="#recomendaciones" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition">
-              // Recursos
-            </Link>
-            <Link href="#sobre-mi" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition">
-              // Sobre Mí
+          <nav className="flex items-center gap-6 text-sm font-medium">
+            <Link
+              href="#auxiliaturas"
+              className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 hover:underline underline-offset-4 transition-colors"
+            >
+              Auxiliaturas
             </Link>
             <Link
-              href="/admin/login"
-              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition"
+              href="#recomendaciones"
+              className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 hover:underline underline-offset-4 transition-colors"
             >
-              <Shield className="w-3.5 h-3.5 text-cyan-500" />
-              <span>Admin</span>
+              Recursos
             </Link>
-          </div>
-        </div>
-
-        <div className="mt-8 pt-8 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
-          <p>
-            © {new Date().getFullYear()} KIRIS • Creado por{" "}
-            <span className="text-slate-700 dark:text-slate-300 font-semibold">Marco Alejandro Lopez Velasquez</span> (UAGRM - FICCT).
-          </p>
-          <p className="flex items-center gap-1.5 text-slate-500 dark:text-cyan-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            <span>Inteligencia Artificial para el día a día</span>
-          </p>
+            <Link
+              href="#sobre-mi"
+              className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-sky-400 hover:underline underline-offset-4 transition-colors"
+            >
+              Sobre Mí
+            </Link>
+          </nav>
         </div>
       </div>
     </footer>
