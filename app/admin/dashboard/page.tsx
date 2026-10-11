@@ -35,9 +35,11 @@ import {
   Home,
   CheckCircle2,
   FolderOpen,
-  Tag
+  Tag,
+  AlertCircle
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -72,6 +74,7 @@ export default function AdminDashboardPage() {
   const [newRecUrl, setNewRecUrl] = useState("");
   const [newRecCategoryId, setNewRecCategoryId] = useState("");
   const [newRecTags, setNewRecTags] = useState("");
+  const [recUrlError, setRecUrlError] = useState("");
 
   // Estados de formulario de tarea
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -82,6 +85,14 @@ export default function AdminDashboardPage() {
   const [newSocialLabel, setNewSocialLabel] = useState("");
   const [newSocialIcon, setNewSocialIcon] = useState("github");
   const [newSocialUrl, setNewSocialUrl] = useState("");
+  const [socialUrlError, setSocialUrlError] = useState("");
+
+  // Modal de confirmación para acciones destructivas (Heurística de Nielsen 5: Prevención de errores)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "aux" | "rec" | "soc" | "task";
+    id: string;
+    title: string;
+  } | null>(null);
 
   // Mensaje de éxito temporal
   const [notification, setNotification] = useState("");
@@ -109,16 +120,16 @@ export default function AdminDashboardPage() {
   // Guardar Auxiliatura
   const handleSaveAuxiliary = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubjectName || !newSubjectCode || !newGroupCode) return;
+    if (!newSubjectName.trim() || !newSubjectCode.trim() || !newGroupCode.trim()) return;
 
     const newAux: Auxiliary = {
       id: "aux-" + Date.now(),
-      subject_name: newSubjectName,
-      subject_code: newSubjectCode,
-      group_code: newGroupCode,
-      schedule: newSchedule,
-      semester: newSemester,
-      description: newAuxDescription,
+      subject_name: newSubjectName.trim(),
+      subject_code: newSubjectCode.trim(),
+      group_code: newGroupCode.trim(),
+      schedule: newSchedule.trim(),
+      semester: newSemester.trim(),
+      description: newAuxDescription.trim(),
       drive_links: driveLinks.filter((l) => l.url.trim() !== ""),
       is_active: true,
       created_at: new Date().toISOString(),
@@ -137,14 +148,14 @@ export default function AdminDashboardPage() {
   // Guardar Categoría
   const handleSaveCategory = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCatName) return;
+    if (!newCatName.trim()) return;
 
     const slug = newCatSlug.trim() || newCatName.toLowerCase().replace(/\s+/g, "-");
     const newCat: Category = {
       id: "cat-" + Date.now(),
-      name: newCatName.toUpperCase(),
+      name: newCatName.trim().toUpperCase(),
       slug,
-      description: newCatDesc,
+      description: newCatDesc.trim(),
       display_order: categoriesList.length + 1,
     };
 
@@ -158,19 +169,25 @@ export default function AdminDashboardPage() {
     showNotification("Categoría agregada correctamente");
   };
 
-  // Guardar Recomendación
+  // Guardar Recomendación con validación estricta de URL
   const handleSaveRecommendation = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newRecTitle || !newRecUrl) return;
+    if (!newRecTitle.trim() || !newRecUrl.trim()) return;
+
+    if (!newRecUrl.startsWith("http://") && !newRecUrl.startsWith("https://")) {
+      setRecUrlError("La dirección URL debe comenzar con https:// o http://");
+      return;
+    }
+    setRecUrlError("");
 
     const targetCategoryId = newRecCategoryId || categoriesList[0]?.id || "general";
 
     const newRec: Recommendation = {
       id: "rec-" + Date.now(),
       category_id: targetCategoryId,
-      title: newRecTitle,
-      description: newRecDesc,
-      url: newRecUrl,
+      title: newRecTitle.trim(),
+      description: newRecDesc.trim(),
+      url: newRecUrl.trim(),
       tags: newRecTags.split(",").map((t) => t.trim()).filter(Boolean),
       is_featured: false,
       created_at: new Date().toISOString(),
@@ -187,11 +204,11 @@ export default function AdminDashboardPage() {
   // Guardar Tarea
   const handleSaveTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTaskTitle) return;
+    if (!newTaskTitle.trim()) return;
 
     const newTask: AdminTask = {
       id: "task-" + Date.now(),
-      title: newTaskTitle,
+      title: newTaskTitle.trim(),
       priority: newTaskPriority,
       status: "pendiente",
       due_date: newTaskDueDate || undefined,
@@ -222,16 +239,26 @@ export default function AdminDashboardPage() {
     );
   };
 
-  // Guardar Enlace Social
+  // Guardar Enlace Social con validación
   const handleSaveSocialLink = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSocialLabel || !newSocialUrl) return;
+    if (!newSocialLabel.trim() || !newSocialUrl.trim()) return;
+
+    if (
+      !newSocialUrl.startsWith("http://") &&
+      !newSocialUrl.startsWith("https://") &&
+      !newSocialUrl.startsWith("mailto:")
+    ) {
+      setSocialUrlError("El enlace debe ser válido (ej. https://... o mailto:...)");
+      return;
+    }
+    setSocialUrlError("");
 
     const newLink: SocialLink = {
       id: "soc-" + Date.now(),
-      label: newSocialLabel,
+      label: newSocialLabel.trim(),
       icon_name: newSocialIcon,
-      url: newSocialUrl,
+      url: newSocialUrl.trim(),
       is_active: true,
       display_order: socialLinksList.length + 1,
     };
@@ -242,8 +269,40 @@ export default function AdminDashboardPage() {
     showNotification("Perfil de red añadido correctamente");
   };
 
+  // Confirmar eliminación
+  const handleExecuteDelete = () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === "aux") {
+      setAuxiliariesList(auxiliariesList.filter((a) => a.id !== deleteTarget.id));
+      showNotification(`Auxiliatura "${deleteTarget.title}" eliminada`);
+    } else if (deleteTarget.type === "rec") {
+      setRecommendationsList(recommendationsList.filter((r) => r.id !== deleteTarget.id));
+      showNotification(`Recomendación "${deleteTarget.title}" eliminada`);
+    } else if (deleteTarget.type === "soc") {
+      setSocialLinksList(socialLinksList.filter((s) => s.id !== deleteTarget.id));
+      showNotification(`Enlace "${deleteTarget.title}" eliminado`);
+    } else if (deleteTarget.type === "task") {
+      setTasksList(tasksList.filter((t) => t.id !== deleteTarget.id));
+      showNotification(`Tarea "${deleteTarget.title}" eliminada`);
+    }
+
+    setDeleteTarget(null);
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-[#060B14] text-slate-800 dark:text-white flex flex-col md:flex-row transition-colors duration-200">
+      {/* Modal de Confirmación */}
+      <ConfirmModal
+        isOpen={deleteTarget !== null}
+        title="¿Confirmar Eliminación?"
+        message={`Estás a punto de eliminar "${deleteTarget?.title}". Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={handleExecuteDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
       {/* Sidebar de Navegación del Admin */}
       <aside className="w-full md:w-64 bg-white dark:bg-[#091222] border-b md:border-b-0 md:border-r border-slate-200 dark:border-blue-950/60 p-5 flex flex-col justify-between flex-shrink-0 shadow-sm">
         <div>
@@ -277,6 +336,7 @@ export default function AdminDashboardPage() {
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
               }`}
+              data-testid="admin-tab-resumen"
             >
               <Shield className="w-4 h-4" />
               <span>Resumen General</span>
@@ -289,6 +349,7 @@ export default function AdminDashboardPage() {
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
               }`}
+              data-testid="admin-tab-auxiliaturas"
             >
               <GraduationCap className="w-4 h-4" />
               <span>Auxiliaturas (Drive)</span>
@@ -301,6 +362,7 @@ export default function AdminDashboardPage() {
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
               }`}
+              data-testid="admin-tab-recomendaciones"
             >
               <Compass className="w-4 h-4" />
               <span>Recomendaciones</span>
@@ -313,6 +375,7 @@ export default function AdminDashboardPage() {
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
               }`}
+              data-testid="admin-tab-redes"
             >
               <Share2 className="w-4 h-4" />
               <span>Perfiles & Redes</span>
@@ -325,6 +388,7 @@ export default function AdminDashboardPage() {
                   ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
               }`}
+              data-testid="admin-tab-tareas"
             >
               <CheckSquare className="w-4 h-4" />
               <span>Mis Tareas (To-Do)</span>
@@ -455,6 +519,7 @@ export default function AdminDashboardPage() {
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-subject-name"
                   />
                 </div>
                 <div>
@@ -466,6 +531,7 @@ export default function AdminDashboardPage() {
                     value={newSubjectCode}
                     onChange={(e) => setNewSubjectCode(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-subject-code"
                   />
                 </div>
                 <div>
@@ -477,6 +543,7 @@ export default function AdminDashboardPage() {
                     value={newGroupCode}
                     onChange={(e) => setNewGroupCode(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-group-code"
                   />
                 </div>
               </div>
@@ -577,6 +644,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2"
+                  data-testid="admin-save-aux-btn"
                 >
                   <Save className="w-4 h-4" />
                   Guardar Auxiliatura
@@ -614,10 +682,14 @@ export default function AdminDashboardPage() {
                       </div>
                       <button
                         onClick={() => {
-                          setAuxiliariesList(auxiliariesList.filter((a) => a.id !== aux.id));
-                          showNotification("Auxiliatura eliminada");
+                          setDeleteTarget({
+                            type: "aux",
+                            id: aux.id,
+                            title: `${aux.subject_name} (${aux.subject_code} - Grupo ${aux.group_code})`,
+                          });
                         }}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40 text-xs"
+                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40 text-xs transition"
+                        title="Eliminar auxiliatura con confirmación"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -655,6 +727,7 @@ export default function AdminDashboardPage() {
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-cat-name"
                   />
                 </div>
                 <div>
@@ -681,6 +754,7 @@ export default function AdminDashboardPage() {
               <button
                 type="submit"
                 className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5"
+                data-testid="admin-save-cat-btn"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Agregar Categoría
@@ -704,6 +778,7 @@ export default function AdminDashboardPage() {
                     value={newRecTitle}
                     onChange={(e) => setNewRecTitle(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-rec-title"
                   />
                 </div>
                 <div>
@@ -712,6 +787,7 @@ export default function AdminDashboardPage() {
                     value={newRecCategoryId}
                     onChange={(e) => setNewRecCategoryId(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-rec-cat"
                   >
                     {categoriesList.length === 0 ? (
                       <option value="">(Sin categorías creadas aún - escribe arriba)</option>
@@ -733,9 +809,23 @@ export default function AdminDashboardPage() {
                   required
                   placeholder="https://..."
                   value={newRecUrl}
-                  onChange={(e) => setNewRecUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  onChange={(e) => {
+                    setNewRecUrl(e.target.value);
+                    if (recUrlError) setRecUrlError("");
+                  }}
+                  className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border text-xs text-slate-900 dark:text-white focus:outline-none ${
+                    recUrlError
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-slate-200 dark:border-slate-700 focus:border-blue-500"
+                  }`}
+                  data-testid="admin-rec-url"
                 />
+                {recUrlError && (
+                  <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>{recUrlError}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -764,6 +854,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-700 text-white shadow-md shadow-cyan-600/20 flex items-center gap-2"
+                  data-testid="admin-save-rec-btn"
                 >
                   <Save className="w-4 h-4" />
                   Guardar Recomendación
@@ -794,10 +885,14 @@ export default function AdminDashboardPage() {
                       </div>
                       <button
                         onClick={() => {
-                          setRecommendationsList(recommendationsList.filter((r) => r.id !== rec.id));
-                          showNotification("Recomendación eliminada");
+                          setDeleteTarget({
+                            type: "rec",
+                            id: rec.id,
+                            title: rec.title,
+                          });
                         }}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs"
+                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs transition"
+                        title="Eliminar recomendación con confirmación"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -836,6 +931,7 @@ export default function AdminDashboardPage() {
                     value={newSocialLabel}
                     onChange={(e) => setNewSocialLabel(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-social-label"
                   />
                 </div>
                 <div>
@@ -859,9 +955,23 @@ export default function AdminDashboardPage() {
                     required
                     placeholder="https://..."
                     value={newSocialUrl}
-                    onChange={(e) => setNewSocialUrl(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    onChange={(e) => {
+                      setNewSocialUrl(e.target.value);
+                      if (socialUrlError) setSocialUrlError("");
+                    }}
+                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border text-xs text-slate-900 dark:text-white focus:outline-none ${
+                      socialUrlError
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-slate-200 dark:border-slate-700 focus:border-blue-500"
+                    }`}
+                    data-testid="admin-social-url"
                   />
+                  {socialUrlError && (
+                    <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{socialUrlError}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -869,6 +979,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 flex items-center gap-2"
+                  data-testid="admin-save-social-btn"
                 >
                   <Save className="w-4 h-4" />
                   Agregar Enlace
@@ -893,10 +1004,14 @@ export default function AdminDashboardPage() {
                       </div>
                       <button
                         onClick={() => {
-                          setSocialLinksList(socialLinksList.filter((s) => s.id !== soc.id));
-                          showNotification("Enlace eliminado");
+                          setDeleteTarget({
+                            type: "soc",
+                            id: soc.id,
+                            title: soc.label,
+                          });
                         }}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs"
+                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs transition"
+                        title="Eliminar enlace con confirmación"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -935,6 +1050,7 @@ export default function AdminDashboardPage() {
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    data-testid="admin-task-title"
                   />
                 </div>
                 <div className="sm:col-span-3">
@@ -964,6 +1080,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="submit"
                   className="px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2"
+                  data-testid="admin-save-task-btn"
                 >
                   <Save className="w-4 h-4" />
                   Agregar Tarea
@@ -1001,6 +1118,7 @@ export default function AdminDashboardPage() {
                               ? "bg-amber-500 text-white border-amber-500"
                               : "border-slate-300 dark:border-slate-600 hover:border-blue-500"
                           }`}
+                          aria-label={`Cambiar estado de tarea ${task.title}`}
                         >
                           {task.status === "completada" && <CheckSquare className="w-3.5 h-3.5" />}
                           {task.status === "en_progreso" && <Clock className="w-3.5 h-3.5" />}
@@ -1040,10 +1158,14 @@ export default function AdminDashboardPage() {
 
                       <button
                         onClick={() => {
-                          setTasksList(tasksList.filter((t) => t.id !== task.id));
-                          showNotification("Tarea eliminada");
+                          setDeleteTarget({
+                            type: "task",
+                            id: task.id,
+                            title: task.title,
+                          });
                         }}
-                        className="p-2 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 text-xs"
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 text-xs transition"
+                        title="Eliminar tarea con confirmación"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

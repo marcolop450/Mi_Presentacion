@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import MouseFollower from "@/components/MouseFollower";
+import AnimatedBackground from "@/components/AnimatedBackground";
 
 export const metadata: Metadata = {
   title: "KIRIS | Innovación en Razonamiento e Inteligencia de Sistemas",
@@ -36,8 +38,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-slate-50 text-slate-900 dark:bg-[#060B14] dark:text-white min-h-screen antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
-        <ThemeProvider>{children}</ThemeProvider>
+      <body className="bg-slate-50 text-slate-900 dark:bg-[#060B14] dark:text-white min-h-screen antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200 relative">
+        <ThemeProvider>
+          <AnimatedBackground />
+          <MouseFollower />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node scripts/e2e-suite.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
