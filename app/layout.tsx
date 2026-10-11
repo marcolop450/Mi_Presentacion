@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "KIRIS | Innovación en Razonamiento e Inteligencia de Sistemas",
   description: "Plataforma oficial de KIRIS - Inteligencia Artificial para el día a día. Recursos, auxiliaturas académicas y recomendaciones seleccionadas por Marco Alejandro Lopez Velasquez.",
   icons: {
-    icon: "/images/logo_kiris.png",
+    icon: "/images/logo_kiris.svg",
   },
 };
 
@@ -33,12 +33,19 @@ export default function RootLayout({
                   document.documentElement.classList.remove('dark');
                   document.documentElement.classList.add('light');
                 }
+
+                // Sary-OS inspired hardware-aware performance profile
+                var weak = (navigator.deviceMemory && navigator.deviceMemory <= 4)
+                        || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+                if (weak) {
+                  document.documentElement.classList.add('perf-lite');
+                }
               } catch (e) {}
             `,
           }}
         />
       </head>
-      <body className="bg-slate-50 text-slate-900 dark:bg-[#060B14] dark:text-white min-h-screen antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200 relative">
+      <body className="bg-slate-50 text-slate-900 dark:bg-[#060B14] dark:text-white min-h-screen antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200 relative flex flex-col">
         <ThemeProvider>
           <AnimatedBackground />
           <MouseFollower />

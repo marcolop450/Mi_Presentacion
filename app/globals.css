@@ -73,6 +73,29 @@ code, kbd, samp, pre, .font-mono {
   outline-offset: 2px;
 }
 
+/* Page Transition Animation (Smooth Route Entrance) */
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.996);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-page-enter {
+  animation: pageEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+/* Sary-OS Hardware-Aware Performance Adaptation */
+.perf-lite * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

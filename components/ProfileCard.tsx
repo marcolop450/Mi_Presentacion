@@ -57,11 +57,11 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
           <div className="lg:col-span-4 flex flex-col items-start gap-4">
             <div className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
               <Image
-                src="/images/logo_kiris.png"
+                src="/images/github_profile.png"
                 alt="Marco Alejandro Lopez Velasquez"
                 fill
                 sizes="(max-width: 640px) 128px, 160px"
-                className="object-cover p-2"
+                className="object-cover"
                 priority
               />
             </div>
