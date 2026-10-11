@@ -4,12 +4,12 @@ import { Shield } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200 dark:border-blue-950/80 bg-slate-100 dark:bg-[#040810] text-slate-600 dark:text-slate-400 py-12 transition-colors duration-200">
+    <footer className="border-t border-slate-200/80 dark:border-blue-950/80 bg-white/70 dark:bg-[#030610]/80 text-slate-600 dark:text-slate-400 py-12 transition-colors duration-200 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo y Eslogan */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white dark:bg-blue-950 border border-slate-200 dark:border-blue-600/40 p-1 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-cyan-950/40 border border-slate-200 dark:border-cyan-500/40 p-1 flex items-center justify-center shadow-sm">
               <Image
                 src="/images/logo_kiris.png"
                 alt="Logo KIRIS"
@@ -19,41 +19,42 @@ export default function Footer() {
               />
             </div>
             <div>
-              <span className="font-black text-slate-900 dark:text-white text-base tracking-wider">KIRIS</span>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-display font-black text-slate-900 dark:text-white text-base tracking-wider">KIRIS</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
                 Innovación en Razonamiento e Inteligencia de Sistemas
               </p>
             </div>
           </div>
 
           {/* Enlaces de Pie de Página */}
-          <div className="flex flex-wrap items-center gap-6 text-xs">
-            <Link href="#auxiliaturas" className="hover:text-blue-600 dark:hover:text-blue-400 transition">
-              Auxiliaturas Universitarias
+          <div className="flex flex-wrap items-center gap-6 text-xs font-mono">
+            <Link href="#auxiliaturas" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition">
+              // Auxiliaturas
             </Link>
-            <Link href="#recomendaciones" className="hover:text-blue-600 dark:hover:text-blue-400 transition">
-              Recomendaciones
+            <Link href="#recomendaciones" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition">
+              // Recursos
             </Link>
-            <Link href="#sobre-mi" className="hover:text-blue-600 dark:hover:text-blue-400 transition">
-              Sobre Mí
+            <Link href="#sobre-mi" className="hover:text-cyan-600 dark:hover:text-cyan-400 transition">
+              // Sobre Mí
             </Link>
             <Link
               href="/admin/login"
-              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+              className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition"
             >
-              <Shield className="w-3.5 h-3.5" />
+              <Shield className="w-3.5 h-3.5 text-cyan-500" />
               <span>Admin</span>
             </Link>
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="mt-8 pt-8 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
           <p>
             © {new Date().getFullYear()} KIRIS • Creado por{" "}
             <span className="text-slate-700 dark:text-slate-300 font-semibold">Marco Alejandro Lopez Velasquez</span> (UAGRM - FICCT).
           </p>
-          <p className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-            Inteligencia Artificial para el día a día
+          <p className="flex items-center gap-1.5 text-slate-500 dark:text-cyan-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span>Inteligencia Artificial para el día a día</span>
           </p>
         </div>
       </div>

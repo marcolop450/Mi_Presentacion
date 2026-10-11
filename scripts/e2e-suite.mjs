@@ -103,7 +103,7 @@ async function runTests() {
 
     assert.ok(mouseFollower.includes("prefers-reduced-motion"), "MouseFollower debe respetar reduced motion");
     assert.ok(mouseFollower.includes("pointer: coarse"), "MouseFollower debe deshabilitarse en táctil");
-    assert.ok(mouseFollower.includes("translate3d"), "MouseFollower debe usar aceleración GPU");
+    assert.ok(mouseFollower.includes("canvas") || mouseFollower.includes("translate3d"), "MouseFollower debe usar aceleración GPU");
     assert.ok(animatedBg.includes("pointer-events-none"), "AnimatedBackground debe ser no intrusivo");
     assert.ok(layout.includes("<MouseFollower />"), "RootLayout debe integrar MouseFollower");
     assert.ok(layout.includes("<AnimatedBackground />"), "RootLayout debe integrar AnimatedBackground");

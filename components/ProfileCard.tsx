@@ -13,7 +13,8 @@ import {
   MapPin, 
   BookOpen, 
   Code2, 
-  ExternalLink 
+  ExternalLink,
+  ShieldCheck
 } from "lucide-react";
 
 interface ProfileCardProps {
@@ -23,7 +24,6 @@ interface ProfileCardProps {
 export default function ProfileCard({ socialLinks }: ProfileCardProps) {
   const [showTerminal, setShowTerminal] = useState(false);
 
-  // Helper para renderizar iconos según el icon_name
   const renderIcon = (iconName: string) => {
     const name = iconName.toLowerCase();
     if (name.includes("github")) return <Github className="w-4 h-4" />;
@@ -36,36 +36,42 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
   const activeLinks = socialLinks.filter((item) => item.is_active);
 
   return (
-    <section id="sobre-mi" className="py-12 border-t border-slate-200 dark:border-blue-950/60 bg-slate-50 dark:bg-[#070D18] transition-colors duration-200">
+    <section id="sobre-mi" className="py-20 relative border-t border-slate-200/80 dark:border-blue-950/60 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+        {/* Cabecera Editorial */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-slate-200 dark:border-blue-950/60">
           <div>
-            <span className="text-xs uppercase tracking-widest text-blue-600 dark:text-blue-400 font-semibold">
-              Perfil Académico & Profesional
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
-              Acerca de Mí • Marco Lopez
+            <div className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-cyan-600 dark:text-cyan-400 font-semibold mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+              <span>EXPEDIENTE TÉCNICO // DOSSIER</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
+              Marco Alejandro Lopez Velasquez
             </h2>
           </div>
 
           <button
             onClick={() => setShowTerminal(!showTerminal)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-cyan-500 text-slate-800 dark:text-cyan-400 transition shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-mono bg-white dark:bg-[#0B1528] border border-slate-300 dark:border-blue-900/60 hover:border-cyan-500 text-slate-800 dark:text-cyan-400 transition shadow-sm"
           >
-            <Terminal className="w-4 h-4 text-blue-600 dark:text-cyan-400" />
-            <span>{showTerminal ? "Ocultar Terminal" : "Ver Terminal ASCII"}</span>
+            <Terminal className="w-4 h-4 text-cyan-500" />
+            <span>{showTerminal ? "$ cerrar-terminal" : "$ abrir-consola-ascii"}</span>
           </button>
         </div>
 
-        {/* Vista Alternativa de Terminal ASCII (Inspirada en su GitHub) */}
+        {/* Consola Terminal CRT (Inspirada en su perfil de GitHub) */}
         {showTerminal && (
-          <div className="mb-8 rounded-2xl bg-[#040811] border border-cyan-500/40 p-5 font-mono text-xs shadow-2xl overflow-hidden">
-            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-800 text-slate-400">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-              <span className="ml-2 text-cyan-400">marcolop450@github:~ (README.md)</span>
+          <div className="mb-10 rounded-3xl bg-[#030611] border border-cyan-500/40 p-6 font-mono text-xs shadow-2xl overflow-hidden relative">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-slate-400">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
+                <span className="ml-2 text-cyan-400 font-semibold">marcolop450@kiris-core:~ (README.md)</span>
+              </div>
+              <span className="text-[10px] text-slate-500 hidden sm:inline">TTY: /dev/pts/1</span>
             </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
               <div className="lg:col-span-6 text-cyan-400 select-none text-[10px] sm:text-[11px] leading-tight overflow-x-auto">
 <pre className="p-2">
@@ -77,66 +83,71 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
    ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝╚══════╝`}
 </pre>
               </div>
-              <div className="lg:col-span-6 space-y-1 text-slate-300 text-xs">
-                <p><span className="text-cyan-400 font-bold">OS:</span> Santa Cruz, Bolivia</p>
-                <p><span className="text-cyan-400 font-bold">Role:</span> Software Engineering & AI Student</p>
-                <p><span className="text-cyan-400 font-bold">Studies:</span> Informatics Engineering - UAGRM FICCT</p>
-                <p><span className="text-cyan-400 font-bold">Stack:</span> Java, C++, C#, Python, Delphi, Next.js</p>
-                <p><span className="text-cyan-400 font-bold">Interests:</span> Mobile Apps, Clean Code, Inteligencia Artificial</p>
-                <p><span className="text-cyan-400 font-bold">Email:</span> marcolop450@gmail.com</p>
+              <div className="lg:col-span-6 space-y-1.5 text-slate-300 text-xs">
+                <p><span className="text-cyan-400 font-bold">ENTORNO:</span> Santa Cruz de la Sierra, Bolivia</p>
+                <p><span className="text-cyan-400 font-bold">ROL:</span> Creador de KIRIS • Estudiante de Ingeniería Informática</p>
+                <p><span className="text-cyan-400 font-bold">FACULTAD:</span> UAGRM - FICCT</p>
+                <p><span className="text-cyan-400 font-bold">STACK:</span> Java, C++, C#, Python, Delphi, Next.js, Supabase</p>
+                <p><span className="text-cyan-400 font-bold">ENFOQUE:</span> Razonamiento e Inteligencia de Sistemas, Clean Code</p>
+                <p><span className="text-cyan-400 font-bold">EMAIL:</span> marcolop450@gmail.com</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Tarjeta Principal de Perfil */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 shadow-sm dark:shadow-xl">
-          {/* Avatar e Imagotipo */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center cyber-glass rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-200 dark:border-blue-900/40">
+          {/* Avatar e Imagotipo Oficial */}
           <div className="lg:col-span-4 flex flex-col items-center text-center">
-            <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full p-1.5 bg-gradient-to-tr from-blue-600 via-cyan-400 to-blue-500 shadow-xl shadow-blue-500/20 mb-4">
-              <div className="w-full h-full rounded-full overflow-hidden bg-slate-100 dark:bg-slate-900 relative">
+            <div className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-full p-2 bg-gradient-to-tr from-cyan-400 via-blue-500 to-indigo-600 shadow-xl shadow-cyan-500/20 mb-5">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-slate-950 relative">
                 <Image
                   src="/images/logo_kiris.png"
                   alt="Marco Alejandro Lopez Velasquez (KIRIS)"
                   fill
-                  className="object-cover p-2"
+                  className="object-cover p-3"
                 />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Marco Alejandro Lopez Velasquez</h3>
-            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mt-0.5">KIRIS • UAGRM - FICCT</p>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-2">
+            <h3 className="text-2xl font-display font-black text-slate-900 dark:text-white">
+              Marco Alejandro Lopez
+            </h3>
+            <div className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-400 font-mono text-xs font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-cyan-500" />
+              <span>KIRIS • FICCT UAGRM</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-mono text-slate-500 dark:text-slate-400 mt-2.5">
               <MapPin className="w-3.5 h-3.5 text-slate-400" />
               <span>Santa Cruz, Bolivia</span>
             </div>
           </div>
 
-          {/* Detalles del Perfil */}
+          {/* Detalles del Perfil & Biografía */}
           <div className="lg:col-span-8 space-y-6">
             <div>
-              <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-300 uppercase tracking-wider mb-2">
-                Biografía & Enfoque
+              <h4 className="font-mono text-xs uppercase tracking-widest text-cyan-600 dark:text-cyan-400 font-bold mb-2">
+                // SÍNTESIS PROFESIONAL & INVESTIGACIÓN
               </h4>
-              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed font-sans">
                 Estudiante de Ingeniería Informática en la Universidad Autónoma Gabriel René Moreno (UAGRM - FICCT). 
-                Creador de la iniciativa <strong className="text-slate-900 dark:text-white">KIRIS</strong> (*Innovación en Razonamiento e Inteligencia de Sistemas*), 
-                enfocada en desarrollar soluciones de Inteligencia Artificial para el día a día, organizar material académico de auxiliaturas 
-                y compartir recursos de programación limpia y eficiente.
+                Fundador de la iniciativa <strong className="text-slate-900 dark:text-white font-semibold">KIRIS</strong> (*Innovación en Razonamiento e Inteligencia de Sistemas*), 
+                creada para democratizar soluciones de Inteligencia Artificial para el día a día, estructurar material de auxiliaturas 
+                y compartir herramientas de software con estándares de ingeniería de alto impacto.
               </p>
             </div>
 
             {/* Competencias y Tecnologías */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-white mb-2">
-                  <Code2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                  <span>Stack de Tecnologías</span>
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-900 dark:text-white mb-2.5">
+                  <Code2 className="w-4 h-4 text-cyan-500" />
+                  <span>STACK TECNOLÓGICO</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {["Java", "C++", "C#", "Python", "Delphi", "Next.js", "Supabase"].map((tech) => (
                     <span
                       key={tech}
-                      className="px-2 py-0.5 rounded-md bg-white text-slate-700 border border-slate-200 dark:bg-[#0F1E38] dark:text-slate-300 text-xs dark:border-blue-900/30"
+                      className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 border border-slate-200 dark:bg-slate-950 dark:text-slate-300 text-xs font-mono dark:border-blue-900/40"
                     >
                       {tech}
                     </span>
@@ -144,16 +155,16 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-white mb-2">
-                  <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span>Áreas de Interés</span>
+              <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-slate-900 dark:text-white mb-2.5">
+                  <BookOpen className="w-4 h-4 text-blue-500" />
+                  <span>ÁREAS DE ENFOQUE</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {["Inteligencia Artificial", "Clean Code", "Mobile Apps", "Arquitectura"].map((area) => (
                     <span
                       key={area}
-                      className="px-2 py-0.5 rounded-md bg-white text-slate-700 border border-slate-200 dark:bg-[#0F1E38] dark:text-slate-300 text-xs dark:border-blue-900/30"
+                      className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 border border-slate-200 dark:bg-slate-950 dark:text-slate-300 text-xs font-mono dark:border-blue-900/40"
                     >
                       {area}
                     </span>
@@ -162,14 +173,14 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
               </div>
             </div>
 
-            {/* Botonera Dinámica de Redes Sociales (Editables sin tocar código) */}
+            {/* Botonera Dinámica de Redes Sociales */}
             <div>
-              <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-                Conectar & Perfiles Profesionales
+              <h4 className="font-mono text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                [ CONEXIONES & PERFILES PROFESIONALES ]
               </h4>
               {activeLinks.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">
-                  Perfiles configurables en tiempo real desde el panel de administración.
+                <p className="text-xs font-mono text-slate-400 italic">
+                  // Enlaces configurables desde el panel de administración
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2.5">
@@ -179,11 +190,11 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 hover:border-blue-500/50 dark:bg-slate-900 dark:hover:bg-blue-950/80 dark:text-slate-200 dark:hover:text-white dark:border-slate-800 dark:hover:border-blue-500/50 transition-all hover:scale-[1.02] shadow-sm"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-mono font-semibold bg-white hover:bg-cyan-50 dark:bg-slate-900 dark:hover:bg-blue-950/80 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:border-cyan-500 transition-all hover:scale-[1.02] shadow-sm"
                     >
                       {renderIcon(link.icon_name)}
                       <span>{link.label}</span>
-                      <ExternalLink className="w-3 h-3 text-slate-400 ml-0.5" />
+                      <ExternalLink className="w-3 h-3 text-cyan-500 ml-0.5" />
                     </a>
                   ))}
                 </div>
