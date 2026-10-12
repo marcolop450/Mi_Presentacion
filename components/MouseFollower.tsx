@@ -49,6 +49,25 @@ export default function MouseFollower() {
     const trail: TrailPoint[] = [];
 
     const handleMouseMove = (e: MouseEvent) => {
+      // Hide cursor follower when hovering over form controls, selects, modals or in admin panel
+      const target = e.target as HTMLElement | null;
+      const isOverInput =
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "SELECT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "OPTION" ||
+          Boolean(target.closest("select")) ||
+          Boolean(target.closest("input")) ||
+          Boolean(target.closest("[role='dialog']")) ||
+          window.location.pathname.startsWith("/admin"));
+
+      if (isOverInput) {
+        isVisible = false;
+        trail.length = 0;
+        return;
+      }
+
       targetX = e.clientX;
       targetY = e.clientY;
       if (!isVisible) {

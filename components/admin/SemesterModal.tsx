@@ -70,7 +70,7 @@ export default function SemesterModal({
       onClose={onClose}
       maxWidth="md"
       title={mode === "edit" ? "Editar Semestre Académico" : "Nuevo Semestre Académico"}
-      subtitle="Define el código del período lectivo y marca si es el semestre en curso actual."
+      subtitle="Define el código del período lectivo (ej. II-2026) y su nombre descriptivo."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -83,7 +83,8 @@ export default function SemesterModal({
             onChange={(e) => setCode(e.target.value)}
           />
           <AdminInput
-            label="Orden de Visualización"
+            label="Orden de Lista"
+            helperText="Posición numérica (1 = primero)"
             type="number"
             min={1}
             isMono
@@ -99,22 +100,6 @@ export default function SemesterModal({
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-
-        <div className="flex items-center gap-2.5 pt-2 pb-1">
-          <input
-            type="checkbox"
-            id="semesterIsCurrent"
-            checked={isCurrent}
-            onChange={(e) => setIsCurrent(e.target.checked)}
-            className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
-          />
-          <label
-            htmlFor="semesterIsCurrent"
-            className="text-xs font-semibold text-slate-700 dark:text-teal-200 cursor-pointer select-none"
-          >
-            Marcar como Semestre Actual en Curso (prioritario en la plataforma)
-          </label>
-        </div>
 
         <div className="pt-4 border-t border-slate-200 dark:border-teal-900/60 flex items-center justify-end gap-2.5">
           <button

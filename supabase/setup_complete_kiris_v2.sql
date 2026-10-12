@@ -89,12 +89,24 @@ CREATE TABLE IF NOT EXISTS public.auxiliaries (
     description TEXT,
     drive_links JSONB NOT NULL DEFAULT '[]'::jsonb,
     is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_auxiliary_subject_semester_group UNIQUE (subject_id, semester_id, group_code)
 );
 
 ALTER TABLE public.auxiliaries ADD COLUMN IF NOT EXISTS subject_id UUID REFERENCES public.subjects(id) ON DELETE CASCADE;
 ALTER TABLE public.auxiliaries ADD COLUMN IF NOT EXISTS semester_id UUID REFERENCES public.semesters(id) ON DELETE RESTRICT;
 ALTER TABLE public.auxiliaries DROP COLUMN IF EXISTS schedule;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'uq_auxiliary_subject_semester_group'
+    ) THEN
+        ALTER TABLE public.auxiliaries 
+        ADD CONSTRAINT uq_auxiliary_subject_semester_group 
+        UNIQUE (subject_id, semester_id, group_code);
+    END IF;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- PASO 8: TABLA REDES SOCIALES Y CONTACTO (social_links)

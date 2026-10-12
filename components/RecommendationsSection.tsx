@@ -19,6 +19,7 @@ import {
   Share2,
 } from "lucide-react";
 import InitialsAvatar from "@/components/InitialsAvatar";
+import AdminPagination from "@/components/admin/AdminPagination";
 
 interface RecommendationsSectionProps {
   categories: Category[];
@@ -32,6 +33,10 @@ export default function RecommendationsSection({
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Paginación (6 por página)
+  const ITEMS_PER_PAGE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const sortedCategories = useMemo(() => {
     return [...categories].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
@@ -50,6 +55,17 @@ export default function RecommendationsSection({
       return matchCategory && matchSearch;
     });
   }, [initialRecommendations, activeCategoryId, searchTerm]);
+
+  // Resetear página al filtrar
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [activeCategoryId, searchTerm]);
+
+  const totalPages = Math.ceil(filteredRecommendations.length / ITEMS_PER_PAGE) || 1;
+  const paginatedRecommendations = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredRecommendations.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredRecommendations, currentPage]);
 
   const handleCopyLink = (url: string, id: string) => {
     navigator.clipboard.writeText(url);
@@ -194,8 +210,9 @@ export default function RecommendationsSection({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredRecommendations.map((rec) => (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {paginatedRecommendations.map((rec) => (
                   <div
                     key={rec.id}
                     className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#081e19]/80 border border-slate-300 dark:border-teal-900/60 hover:border-slate-400 dark:hover:border-teal-500 transition-all duration-200 shadow-xs hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-xs"
@@ -272,7 +289,17 @@ export default function RecommendationsSection({
                   </div>
                 ))}
               </div>
-            )}
+
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredRecommendations.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+                itemLabel="recursos"
+              />
+            </div>
+          )}
           </>
         )}
       </div>

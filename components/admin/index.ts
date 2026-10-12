@@ -36,3 +36,6 @@ export type { RecommendationModalProps } from "./RecommendationModal";
 
 export { default as SocialModal } from "./SocialModal";
 export type { SocialModalProps } from "./SocialModal";
+
+export { default as AdminPagination } from "./AdminPagination";
+export type { PaginationProps } from "./AdminPagination";

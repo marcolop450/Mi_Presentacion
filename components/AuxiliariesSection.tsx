@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import InitialsAvatar from "@/components/InitialsAvatar";
 
+import AdminPagination from "@/components/admin/AdminPagination";
+
 interface AuxiliariesSectionProps {
   auxiliaries: Auxiliary[];
 }
@@ -28,6 +30,10 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
+
+  // Paginación (6 por página)
+  const ITEMS_PER_PAGE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const uniqueSubjects = useMemo(() => {
     return Array.from(new Set(auxiliaries.map((a) => a.subject?.name || a.subject_name).filter(Boolean))) as string[];
@@ -61,6 +67,17 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
       return matchSearch && matchSubject && matchGroup;
     });
   }, [auxiliaries, searchTerm, selectedSubject, selectedGroup]);
+
+  // Resetear página al filtrar
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedSubject, selectedGroup]);
+
+  const totalPages = Math.ceil(filteredAuxiliaries.length / ITEMS_PER_PAGE) || 1;
+  const paginatedAuxiliaries = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAuxiliaries.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredAuxiliaries, currentPage]);
 
   const handleCopyLink = (url: string, id: string) => {
     navigator.clipboard.writeText(url);
@@ -209,12 +226,13 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredAuxiliaries.map((aux) => (
-                  <div
-                    key={aux.id}
-                    className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#081e19]/80 border border-slate-300 dark:border-teal-900/60 hover:border-slate-400 dark:hover:border-teal-500 transition-all duration-200 shadow-xs hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-xs"
-                  >
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {paginatedAuxiliaries.map((aux) => (
+                    <div
+                      key={aux.id}
+                      className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#081e19]/80 border border-slate-300 dark:border-teal-900/60 hover:border-slate-400 dark:hover:border-teal-500 transition-all duration-200 shadow-xs hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-xs"
+                    >
                     <div>
                       {/* Cabecera de la Tarjeta con Avatar y Badges */}
                       {(() => {
@@ -342,7 +360,17 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                   </div>
                 ))}
               </div>
-            )}
+
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredAuxiliaries.length}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={setCurrentPage}
+                itemLabel="auxiliaturas"
+              />
+            </div>
+          )}
           </>
         )}
       </div>
