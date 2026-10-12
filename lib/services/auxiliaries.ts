@@ -9,7 +9,7 @@ export async function getAuxiliaries(): Promise<Auxiliary[]> {
 
     const { data, error } = await supabase
       .from("auxiliaries")
-      .select("*, subject:subjects(*, category:categories(*)), semester:semesters(*)")
+      .select("*, subject:subjects(*), semester:semesters(*)")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
 

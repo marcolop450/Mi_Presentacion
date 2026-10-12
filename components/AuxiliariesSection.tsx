@@ -240,7 +240,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                         const subCode = aux.subject?.code || aux.subject_code || "INF";
                         const imgUrl = aux.subject?.image_url || aux.image_url;
                         const semCode = aux.semester?.code || (typeof aux.semester === "string" ? aux.semester : "") || aux.semester_code || "";
-                        const cat = aux.subject?.category;
 
                         return (
                           <div className="flex items-start justify-between gap-3 mb-3.5">
@@ -254,18 +253,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                                   <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
                                     Grupo {aux.group_code}
                                   </span>
-                                  {cat && (
-                                    <span
-                                      className="text-[10px] font-mono px-2 py-0.5 rounded-md border"
-                                      style={{
-                                        backgroundColor: `${cat.color || "#0d9488"}20`,
-                                        borderColor: `${cat.color || "#0d9488"}50`,
-                                        color: cat.color || "#0d9488",
-                                      }}
-                                    >
-                                      {cat.name}
-                                    </span>
-                                  )}
                                 </div>
                                 <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight mt-1">
                                   {subName}

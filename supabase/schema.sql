@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS public.subjects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,                -- Ej: "Estructuras de Datos I"
     code VARCHAR(50) NOT NULL UNIQUE,          -- Ej: "INF-220"
-    category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
     image_url TEXT,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -83,7 +82,6 @@ CREATE TABLE IF NOT EXISTS public.auxiliaries (
 CREATE INDEX IF NOT EXISTS idx_categories_order ON public.categories(display_order);
 CREATE INDEX IF NOT EXISTS idx_semesters_current ON public.semesters(is_current);
 CREATE INDEX IF NOT EXISTS idx_subjects_code ON public.subjects(code);
-CREATE INDEX IF NOT EXISTS idx_subjects_category ON public.subjects(category_id);
 CREATE INDEX IF NOT EXISTS idx_recommendations_category ON public.recommendations(category_id);
 CREATE INDEX IF NOT EXISTS idx_recommendations_featured ON public.recommendations(is_featured);
 CREATE INDEX IF NOT EXISTS idx_auxiliaries_subject ON public.auxiliaries(subject_id);

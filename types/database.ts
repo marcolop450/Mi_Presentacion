@@ -52,11 +52,9 @@ export interface Subject {
   id: string;
   name: string; // e.g. "Estructuras de Datos I"
   code: string; // e.g. "INF-220"
-  category_id?: string;
   image_url?: string;
   description?: string;
   created_at?: string;
-  category?: Category;
 }
 
 export interface Auxiliary {

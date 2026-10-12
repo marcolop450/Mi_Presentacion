@@ -83,14 +83,14 @@ export default function CategoryModal({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="md"
-      title={mode === "edit" ? "Editar Categoría" : "Nueva Categoría de IA"}
-      subtitle="Organiza los recursos del portal por áreas temáticas y define su orden de aparición."
+      title={mode === "edit" ? "Editar Categoría" : "Nueva Categoría de Recursos"}
+      subtitle="Organiza los recursos externos, herramientas de IA y documentación por temáticas."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <AdminInput
           label="Nombre de la Categoría"
           required
-          placeholder="Ej. Visión por Computadora"
+          placeholder="Ej. Inteligencia Artificial, Frameworks, Bases de Datos..."
           value={name}
           onChange={(e) => {
             setName(e.target.value);

@@ -181,7 +181,7 @@ export default function AdminDashboardPage() {
       const [semRes, catRes, subRes, auxRes, recRes, socRes] = await Promise.all([
         supabase.from("semesters").select("*").order("display_order", { ascending: true }),
         supabase.from("categories").select("*").order("display_order", { ascending: true }),
-        supabase.from("subjects").select("*, category:categories(*)").order("code", { ascending: true }),
+        supabase.from("subjects").select("*").order("code", { ascending: true }),
         supabase.from("auxiliaries").select("*, subject:subjects(*), semester:semesters(*)").order("created_at", { ascending: false }),
         supabase.from("recommendations").select("*, category:categories(*)").order("created_at", { ascending: false }),
         supabase.from("social_links").select("*").order("display_order", { ascending: true }),
@@ -274,7 +274,6 @@ export default function AdminDashboardPage() {
   const handleSaveSubject = async (payload: {
     name: string;
     code: string;
-    category_id?: string;
     image_url: string | null;
     description: string | null;
   }) => {
@@ -1082,18 +1081,6 @@ export default function AdminDashboardPage() {
                                   <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
                                     {sub.code}
                                   </span>
-                                  {sub.category && (
-                                    <span
-                                      className="text-[10px] font-mono px-2 py-0.5 rounded-md border"
-                                      style={{
-                                        backgroundColor: `${sub.category.color || "#0d9488"}20`,
-                                        borderColor: `${sub.category.color || "#0d9488"}50`,
-                                        color: sub.category.color || "#0d9488",
-                                      }}
-                                    >
-                                      {sub.category.name}
-                                    </span>
-                                  )}
                                 </div>
                                 <h3 className="text-base font-display font-bold text-slate-900 dark:text-white mt-1 leading-snug">
                                   {sub.name}
@@ -1360,7 +1347,6 @@ export default function AdminDashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {paginatedCategories.map((cat) => {
                     const linkedCount = recommendationsList.filter((r) => r.category_id === cat.id).length;
-                    const linkedSubCount = subjectsList.filter((s) => s.category_id === cat.id).length;
                     return (
                       <div
                         key={cat.id}
@@ -1378,7 +1364,7 @@ export default function AdminDashboardPage() {
                               </span>
                             </div>
                             <span className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
-                              {linkedCount} recursos • {linkedSubCount} materias
+                              {linkedCount} {linkedCount === 1 ? "recurso" : "recursos"}
                             </span>
                           </div>
 
@@ -1703,10 +1689,8 @@ export default function AdminDashboardPage() {
         isOpen={activeModalType === "sub"}
         mode={modalMode}
         initialData={selectedSub}
-        categories={categoriesList}
         onClose={() => setActiveModalType(null)}
         onSave={handleSaveSubject}
-        onOpenNewCategory={() => openCategoryModal()}
         subjectNameTestId="admin-subject-name" /* data-testid="admin-subject-name" */
       />
 

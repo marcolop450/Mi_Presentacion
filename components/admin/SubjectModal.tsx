@@ -1,28 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Subject, Category } from "@/types/database";
+import { Subject } from "@/types/database";
 import AdminModal from "./AdminModal";
 import AdminInput from "./AdminInput";
 import AdminTextarea from "./AdminTextarea";
-import AdminSelect from "./AdminSelect";
 import InitialsAvatar from "@/components/InitialsAvatar";
-import { Plus } from "lucide-react";
 
 export interface SubjectModalProps {
   isOpen: boolean;
   mode: "create" | "edit" | null;
   initialData: Subject | null;
-  categories: Category[];
   onClose: () => void;
   onSave: (payload: {
     name: string;
     code: string;
-    category_id?: string;
     image_url: string | null;
     description: string | null;
   }) => Promise<void> | void;
-  onOpenNewCategory?: () => void;
   subjectNameTestId?: string;
 }
 
@@ -30,15 +25,12 @@ export default function SubjectModal({
   isOpen,
   mode,
   initialData,
-  categories,
   onClose,
   onSave,
-  onOpenNewCategory,
   subjectNameTestId = "admin-subject-name",
 }: SubjectModalProps) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [categoryId, setCategoryId] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,17 +39,15 @@ export default function SubjectModal({
     if (initialData && mode === "edit") {
       setName(initialData.name || "");
       setCode(initialData.code || "");
-      setCategoryId(initialData.category_id || "");
       setImageUrl(initialData.image_url || "");
       setDescription(initialData.description || "");
     } else {
       setName("");
       setCode("");
-      setCategoryId(categories[0]?.id || "");
       setImageUrl("");
       setDescription("");
     }
-  }, [initialData, mode, categories, isOpen]);
+  }, [initialData, mode, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +58,6 @@ export default function SubjectModal({
       await onSave({
         name: name.trim(),
         code: code.trim().toUpperCase(),
-        category_id: categoryId || undefined,
         image_url: imageUrl.trim() || null,
         description: description.trim() || null,
       });
@@ -83,7 +72,7 @@ export default function SubjectModal({
       onClose={onClose}
       maxWidth="lg"
       title={mode === "edit" ? "Editar Materia" : "Nueva Materia (Catálogo Maestro)"}
-      subtitle="Registra la asignatura una sola vez con su sigla oficial y categoría académica."
+      subtitle="Registra la asignatura una sola vez con su sigla oficial única (ej. INF-220)."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -107,35 +96,6 @@ export default function SubjectModal({
               onChange={(e) => setCode(e.target.value)}
             />
           </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-xs font-bold text-slate-700 dark:text-teal-200">
-              Categoría / Área Académica (Opcional)
-            </label>
-            {onOpenNewCategory && (
-              <button
-                type="button"
-                onClick={onOpenNewCategory}
-                className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Crear nueva categoría</span>
-              </button>
-            )}
-          </div>
-          <AdminSelect
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-          >
-            <option value="">Sin categoría específica</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </AdminSelect>
         </div>
 
         {/* URL de Imagen con Avatar de Iniciales de Respaldo */}
@@ -175,7 +135,7 @@ export default function SubjectModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25 transition active:scale-95 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25 transition active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting
               ? "Guardando..."
