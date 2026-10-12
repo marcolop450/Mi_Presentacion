@@ -182,95 +182,74 @@ BEGIN
   -- Generación de hash bcrypt
   v_encrypted_pw := crypt(v_password, gen_salt('bf'));
 
-  -- Verificar si el usuario ya existe
-  SELECT id INTO v_user_id FROM auth.users WHERE email = v_email LIMIT 1;
+  -- 1. Limpiar registros previos incompletos que causan 'Database error finding user' (500)
+  DELETE FROM auth.identities WHERE user_id IN (SELECT id FROM auth.users WHERE email = v_email);
+  DELETE FROM auth.users WHERE email = v_email;
 
-  IF v_user_id IS NULL THEN
-    v_user_id := gen_random_uuid();
+  -- 2. Insertar usuario con TODOS los tokens inicializados a texto vacío '' (no NULL)
+  INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    confirmation_token,
+    recovery_token,
+    email_change_token_new,
+    email_change,
+    phone_change,
+    phone_change_token,
+    email_change_token_current,
+    reauthentication_token,
+    email_change_confirm_status,
+    is_sso_user,
+    is_super_admin,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    v_user_id,
+    'authenticated',
+    'authenticated',
+    v_email,
+    v_encrypted_pw,
+    NOW(),
+    '', '', '', '', '', '', '', '',
+    0,
+    FALSE,
+    FALSE,
+    '{"provider": "email", "providers": ["email"]}'::jsonb,
+    '{"name": "Marco Alejandro Lopez Velasquez", "role": "admin"}'::jsonb,
+    NOW(),
+    NOW()
+  );
 
-    -- Inserción en auth.users
-    INSERT INTO auth.users (
-      instance_id,
-      id,
-      aud,
-      role,
-      email,
-      encrypted_password,
-      email_confirmed_at,
-      raw_app_meta_data,
-      raw_user_meta_data,
-      created_at,
-      updated_at
-    ) VALUES (
-      '00000000-0000-0000-0000-000000000000',
-      v_user_id,
-      'authenticated',
-      'authenticated',
-      v_email,
-      v_encrypted_pw,
-      NOW(),
-      '{"provider": "email", "providers": ["email"]}',
-      '{"name": "Marco Alejandro Lopez Velasquez", "role": "admin"}',
-      NOW(),
-      NOW()
-    );
+  -- 3. Vincular identidad oficial para inicio de sesión por email
+  INSERT INTO auth.identities (
+    id,
+    user_id,
+    identity_data,
+    provider,
+    provider_id,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    v_user_id,
+    v_user_id,
+    format('{"sub": "%s", "email": "%s"}', v_user_id, v_email)::jsonb,
+    'email',
+    v_email,
+    NOW(),
+    NOW(),
+    NOW()
+  );
 
-    -- Inserción en auth.identities (indispensable para inicio con email/password en Supabase)
-    INSERT INTO auth.identities (
-      id,
-      user_id,
-      identity_data,
-      provider,
-      provider_id,
-      last_sign_in_at,
-      created_at,
-      updated_at
-    ) VALUES (
-      v_user_id,
-      v_user_id,
-      format('{"sub": "%s", "email": "%s"}', v_user_id, v_email)::jsonb,
-      'email',
-      v_email,
-      NOW(),
-      NOW(),
-      NOW()
-    );
-
-    RAISE NOTICE '✓ Administrador registrado exitosamente: %', v_email;
-  ELSE
-    -- Si ya existe, actualizamos contraseña y confirmación
-    UPDATE auth.users
-    SET 
-      encrypted_password = v_encrypted_pw,
-      email_confirmed_at = COALESCE(email_confirmed_at, NOW()),
-      updated_at = NOW(),
-      raw_user_meta_data = '{"name": "Marco Alejandro Lopez Velasquez", "role": "admin"}'
-    WHERE id = v_user_id;
-
-    IF NOT EXISTS (SELECT 1 FROM auth.identities WHERE user_id = v_user_id) THEN
-      INSERT INTO auth.identities (
-        id,
-        user_id,
-        identity_data,
-        provider,
-        provider_id,
-        last_sign_in_at,
-        created_at,
-        updated_at
-      ) VALUES (
-        v_user_id,
-        v_user_id,
-        format('{"sub": "%s", "email": "%s"}', v_user_id, v_email)::jsonb,
-        'email',
-        v_email,
-        NOW(),
-        NOW(),
-        NOW()
-      );
-    END IF;
-
-    RAISE NOTICE '✓ Contraseña de administrador actualizada para: %', v_email;
-  END IF;
+  RAISE NOTICE '✓ Administrador registrado y configurado sin campos nulos: %', v_email;
 END $$;
 
 -- ----------------------------------------------------------------------------
