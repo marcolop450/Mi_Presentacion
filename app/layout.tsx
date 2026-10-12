@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import MouseFollower from "@/components/MouseFollower";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import RouteTransitionLoader from "@/components/RouteTransitionLoader";
 
 export const metadata: Metadata = {
   title: "KIRIS | Innovación en Razonamiento e Inteligencia de Sistemas",
@@ -45,8 +47,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="bg-[#f0fdfa] text-slate-900 dark:bg-[#061317] dark:text-[#f0fdfa] min-h-screen antialiased selection:bg-teal-500 selection:text-white transition-colors duration-200 relative flex flex-col">
+      <body className="bg-[#dff0fa] text-slate-900 dark:bg-[#061317] dark:text-[#f0fdfa] min-h-screen antialiased selection:bg-teal-500 selection:text-white transition-colors duration-200 relative flex flex-col">
         <ThemeProvider>
+          {/* Transition loader for immediate feedback on navigation */}
+          <Suspense fallback={null}>
+            <RouteTransitionLoader />
+          </Suspense>
           {/* Animated Background at z-0 */}
           <AnimatedBackground />
           <MouseFollower />

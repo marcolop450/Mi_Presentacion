@@ -102,7 +102,7 @@ export default async function HomePage() {
         <HeroBanner />
 
         {/* Telemetría y Métricas Académicas */}
-        <section className="py-6 border-y border-teal-500/10 dark:border-teal-400/10">
+        <section className="py-6 border-y border-slate-200 dark:border-teal-400/10">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
               {telemetryStats.map((stat, i) => {
@@ -110,7 +110,7 @@ export default async function HomePage() {
                 return (
                   <div
                     key={i}
-                    className="p-4 sm:p-5 rounded-2xl bg-white/40 dark:bg-teal-950/20 border border-teal-200/50 dark:border-teal-800/40 backdrop-blur-xs flex flex-col items-center text-center"
+                    className="p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-teal-950/20 border border-slate-300 dark:border-teal-800/40 backdrop-blur-xs flex flex-col items-center text-center shadow-xs"
                   >
                     <div className="w-8 h-8 rounded-xl bg-teal-100/60 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center mb-2">
                       <Icon className="w-4 h-4" />
@@ -135,7 +135,7 @@ export default async function HomePage() {
         <section className="py-16 md:py-20">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/80 mb-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 border border-slate-300 dark:border-teal-800/80 mb-3 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                 <span>ECOSISTEMA KIRIS</span>
               </div>
@@ -155,14 +155,14 @@ export default async function HomePage() {
                   <Link
                     key={sec.href}
                     href={sec.href}
-                    className="group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-white/50 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/40 hover:border-teal-400 dark:hover:border-teal-600 hover:bg-white/80 dark:hover:bg-teal-950/40 transition-all duration-300 backdrop-blur-xs shadow-xs hover:shadow-md hover:-translate-y-1"
+                    className="group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-white/80 dark:bg-teal-950/20 border border-slate-300 dark:border-teal-800/40 hover:border-slate-400 dark:hover:border-teal-600 hover:bg-white dark:hover:bg-teal-950/40 transition-all duration-300 backdrop-blur-xs shadow-xs hover:shadow-md hover:-translate-y-1"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-4">
                         <div className="w-12 h-12 rounded-2xl bg-teal-100/70 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center group-hover:scale-105 transition-transform">
                           <IconComponent className="w-6 h-6" />
                         </div>
-                        <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-teal-100/50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/60">
+                        <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-teal-800/60">
                           {sec.badge}
                         </span>
                       </div>
@@ -176,7 +176,7 @@ export default async function HomePage() {
                       </p>
 
                       {/* Lista de características micro-detalladas */}
-                      <ul className="mt-5 space-y-1.5 pt-4 border-t border-teal-200/40 dark:border-teal-900/40">
+                      <ul className="mt-5 space-y-1.5 pt-4 border-t border-slate-200 dark:border-teal-900/40">
                         {sec.features.map((feat, idx) => (
                           <li key={idx} className="flex items-center gap-2 text-xs text-slate-600 dark:text-teal-200/70">
                             <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 shrink-0" />
@@ -198,7 +198,7 @@ export default async function HomePage() {
         </section>
 
         {/* Pilares Fundamentales de KIRIS */}
-        <section className="py-16 border-t border-teal-500/10 dark:border-teal-400/10">
+        <section className="py-16 border-t border-slate-200 dark:border-teal-400/10">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <h2 className="text-xl sm:text-2xl font-display font-black text-slate-900 dark:text-white tracking-tight">
@@ -215,7 +215,7 @@ export default async function HomePage() {
                 return (
                   <div
                     key={i}
-                    className="p-5 rounded-2xl bg-white/30 dark:bg-teal-950/15 border border-teal-200/40 dark:border-teal-800/30 backdrop-blur-xs"
+                    className="p-5 rounded-2xl bg-white/70 dark:bg-teal-950/15 border border-slate-300 dark:border-teal-800/30 backdrop-blur-xs shadow-xs"
                   >
                     <div className="w-9 h-9 rounded-xl bg-teal-100/60 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center mb-3">
                       <Icon className="w-4 h-4" />

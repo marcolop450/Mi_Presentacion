@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 py-8 px-6 sm:px-10 rounded-3xl shadow-xl">
+        <div className="bg-white dark:bg-[#0B1528] border border-slate-300 dark:border-blue-900/40 py-8 px-6 sm:px-10 rounded-3xl shadow-xl">
           {errorMsg && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-500/40 text-red-700 dark:text-red-200 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500 dark:text-red-400" />
@@ -123,7 +123,7 @@ export default function AdminLoginPage() {
                   placeholder="marcolop450@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
                 />
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-blue-500 transition"
                 />
               </div>
             </div>

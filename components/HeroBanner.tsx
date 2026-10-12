@@ -23,7 +23,7 @@ export default function HeroBanner() {
         </div>
 
         {/* Institution Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50/80 dark:bg-teal-950/70 border border-teal-200/80 dark:border-teal-800/80 text-teal-800 dark:text-teal-200 text-xs font-mono font-semibold mb-5 shadow-sm">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-teal-950/70 border border-slate-300 dark:border-teal-800/80 text-teal-800 dark:text-teal-200 text-xs font-mono font-semibold mb-5 shadow-xs">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>FICCT // UAGRM • SANTA CRUZ, BOLIVIA</span>
         </div>
@@ -56,7 +56,7 @@ export default function HeroBanner() {
 
           <Link
             href="/recursos"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-sm border border-teal-200 dark:border-teal-800/80 bg-white/80 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-900/50 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-sm border border-slate-300 dark:border-teal-800/80 bg-white/90 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-900/50 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xs"
           >
             <Compass className="w-4 h-4 text-teal-600 dark:text-teal-400" />
             <span>Ver Recursos &amp; IA</span>

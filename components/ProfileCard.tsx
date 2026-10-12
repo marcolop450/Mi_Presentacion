@@ -109,7 +109,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
         </div>
 
         {/* Nombre y Títulos */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800 mb-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-white dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-teal-800 mb-2 shadow-xs">
           <Award className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
           <span>ESTUDIANTE &amp; AUXILIAR FICCT</span>
         </div>
@@ -131,7 +131,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
         <div className="mt-4">
           <button
             onClick={handleCopyEmail}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold bg-teal-50/80 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900 text-teal-800 dark:text-teal-200 border border-teal-200/80 dark:border-teal-800/80 transition shadow-xs"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold bg-white hover:bg-slate-100 dark:bg-teal-950/60 dark:hover:bg-teal-900 text-teal-800 dark:text-teal-200 border border-slate-300 dark:border-teal-800/80 transition shadow-xs"
           >
             {copiedMail ? (
               <>
@@ -150,7 +150,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
 
         {/* Métricas y Datos Destacados */}
         <div className="grid grid-cols-3 gap-3 w-full max-w-md mt-6">
-          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/70 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
+          <div className="p-3.5 rounded-2xl border border-slate-300 dark:border-teal-800/60 bg-white/85 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
             <span className="block font-mono text-sm sm:text-base font-bold text-teal-700 dark:text-teal-300">
               FICCT
             </span>
@@ -159,7 +159,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
             </span>
           </div>
 
-          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/70 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
+          <div className="p-3.5 rounded-2xl border border-slate-300 dark:border-teal-800/60 bg-white/85 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
             <span className="block font-mono text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">
               KIRIS
             </span>
@@ -168,7 +168,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
             </span>
           </div>
 
-          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/70 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
+          <div className="p-3.5 rounded-2xl border border-slate-300 dark:border-teal-800/60 bg-white/85 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
             <span className="block font-mono text-sm sm:text-base font-bold text-teal-700 dark:text-teal-300">
               DRIVE
             </span>
@@ -179,7 +179,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
         </div>
 
         {/* Ficha de Presentación */}
-        <div className="w-full mt-7 p-6 sm:p-8 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/75 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
+        <div className="w-full mt-7 p-6 sm:p-8 rounded-3xl border border-slate-300 dark:border-teal-900/60 bg-white/85 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 flex items-center gap-2">
               <GraduationCap className="w-4 h-4" />
@@ -193,7 +193,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
         </div>
 
         {/* Trayectoria y Roles */}
-        <div className="w-full mt-6 p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/75 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
+        <div className="w-full mt-6 p-6 rounded-3xl border border-slate-300 dark:border-teal-900/60 bg-white/85 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
           <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4 flex items-center gap-2">
             <Layers className="w-4 h-4 text-teal-500" />
             <span>Trayectoria e Iniciativas Clave</span>
@@ -202,7 +202,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
             {milestones.map((m, idx) => (
               <div
                 key={idx}
-                className="p-3.5 rounded-2xl bg-teal-50/50 dark:bg-teal-950/50 border border-teal-200/60 dark:border-teal-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-teal-950/50 border border-slate-200 dark:border-teal-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
               >
                 <div>
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white">
@@ -212,7 +212,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
                     {m.desc}
                   </p>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-teal-100 dark:bg-teal-900/70 text-teal-800 dark:text-teal-200 shrink-0 self-start sm:self-center font-bold">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-teal-900/70 text-teal-800 dark:text-teal-200 shrink-0 self-start sm:self-center font-bold border border-slate-200 dark:border-transparent">
                   {m.status}
                 </span>
               </div>
@@ -221,7 +221,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
         </div>
 
         {/* Stack Tecnológico Organizado */}
-        <div className="w-full mt-6 p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/75 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
+        <div className="w-full mt-6 p-6 rounded-3xl border border-slate-300 dark:border-teal-900/60 bg-white/85 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
           <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4 flex items-center gap-2">
             <Code2 className="w-4 h-4 text-teal-500" />
             <span>Habilidades &amp; Stack Tecnológico</span>
@@ -236,7 +236,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
                   {group.items.map((item) => (
                     <span
                       key={item}
-                      className="px-3 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/70 border border-teal-200/70 dark:border-teal-800/60 text-teal-900 dark:text-teal-200 text-xs font-mono font-medium"
+                      className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-teal-950/70 border border-slate-300 dark:border-teal-800/60 text-slate-800 dark:text-teal-200 text-xs font-mono font-medium"
                     >
                       {item}
                     </span>
@@ -265,7 +265,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-mono font-semibold bg-white/80 hover:bg-teal-50 dark:bg-teal-950/70 dark:hover:bg-teal-900/60 text-slate-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800/80 hover:border-teal-400 transition-all hover:scale-[1.02] shadow-xs backdrop-blur-xs"
+                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-mono font-semibold bg-white hover:bg-slate-50 dark:bg-teal-950/70 dark:hover:bg-teal-900/60 text-slate-800 dark:text-teal-200 border border-slate-300 dark:border-teal-800/80 hover:border-slate-400 transition-all hover:scale-[1.02] shadow-xs backdrop-blur-xs"
                 >
                   {renderIcon(link.icon_name)}
                   <span>{link.label}</span>
