@@ -111,3 +111,16 @@ code, kbd, samp, pre, .font-mono {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Ocultar el indicador 'N' de Next.js en la esquina inferior */
+[data-nextjs-dev-tools-button],
+[data-nextjs-toast],
+nextjs-portal,
+div[data-nextjs-dev-tools-button],
+button[data-nextjs-dev-tools-button] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
