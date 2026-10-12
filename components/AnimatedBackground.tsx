@@ -311,7 +311,6 @@ export default function AnimatedBackground() {
       stars = [];
       winterClouds = [];
       iceCrystals = [];
-      winterBirds = [];
 
       if (isDark) {
         // Estrellas
