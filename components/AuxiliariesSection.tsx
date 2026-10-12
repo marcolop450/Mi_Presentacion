@@ -12,6 +12,11 @@ import {
   Clock,
   Layers,
   Inbox,
+  Copy,
+  Check,
+  Sparkles,
+  Cloud,
+  CheckCircle2,
 } from "lucide-react";
 
 interface AuxiliariesSectionProps {
@@ -22,6 +27,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
 
   const uniqueSubjects = useMemo(() => {
     return Array.from(new Set(auxiliaries.map((a) => a.subject_name)));
@@ -49,6 +55,12 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
     });
   }, [auxiliaries, searchTerm, selectedSubject, selectedGroup]);
 
+  const handleCopyLink = (url: string, id: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedIndex(id);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
   const renderLinkIcon = (type?: string) => {
     if (type === "clases" || type === "video") return <Video className="w-4 h-4 text-teal-600 dark:text-teal-400" />;
     if (type === "practicas" || type === "guias") return <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
@@ -58,11 +70,12 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
   return (
     <section className="py-12 md:py-16">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Cabecera de Sección */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-teal-200/60 dark:border-teal-900/60">
+        {/* Cabecera de Sección Enriquecida */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-teal-500/15 dark:border-teal-400/10">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/70 border border-teal-200 dark:border-teal-800/80 text-teal-700 dark:text-teal-300 text-xs font-mono font-semibold mb-3">
-              <span>FICCT // UAGRM</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>FICCT // UAGRM • REPOSITORIO OFICIAL</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
               Auxiliaturas Universitarias
@@ -70,6 +83,14 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
             <p className="text-sm text-slate-600 dark:text-teal-100/70 mt-2 max-w-[65ch]">
               Carpetas oficiales de Google Drive organizadas por Sigla, Materia y Grupo para estudiantes de la FICCT.
             </p>
+          </div>
+
+          {/* Badge Informativo de Acceso Directo */}
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/60 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/50 text-xs font-medium text-slate-600 dark:text-teal-200/80 backdrop-blur-xs">
+            <Cloud className="w-4 h-4 text-teal-500" />
+            <span>Google Drive Directo</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+            <span>Sincronizado</span>
           </div>
         </div>
 
@@ -88,12 +109,12 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
           </div>
         ) : (
           <>
-            {/* Controles de Búsqueda y Filtro */}
-            <div className="p-4 sm:p-5 rounded-3xl mb-8 bg-white/80 dark:bg-[#0a2026]/80 border border-teal-200/80 dark:border-teal-900/60 shadow-sm backdrop-blur-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            {/* Controles de Búsqueda y Filtro con Detalles */}
+            <div className="p-4 sm:p-5 rounded-3xl mb-8 bg-white/70 dark:bg-[#081e19]/70 border border-teal-200/80 dark:border-teal-900/60 shadow-xs backdrop-blur-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
                 {/* Buscador */}
                 <div className="sm:col-span-6 relative">
-                  <Search className="w-4 h-4 text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-teal-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     placeholder="Buscar materia, sigla (INF-220) o grupo..."
@@ -112,7 +133,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                     className="w-full px-3 py-2.5 rounded-2xl bg-teal-50/50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-teal-500 transition"
                     data-testid="subject-select"
                   >
-                    <option value="all">Todas las materias</option>
+                    <option value="all">Todas las materias ({uniqueSubjects.length})</option>
                     {uniqueSubjects.map((sub) => (
                       <option key={sub} value={sub}>
                         {sub}
@@ -129,7 +150,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                     className="w-full px-3 py-2.5 rounded-2xl bg-teal-50/50 dark:bg-teal-950/60 border border-teal-200/80 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-teal-500 transition"
                     data-testid="group-select"
                   >
-                    <option value="all">Todos los grupos</option>
+                    <option value="all">Todos los grupos ({uniqueGroups.length})</option>
                     {uniqueGroups.map((grp) => (
                       <option key={grp} value={grp}>
                         Grupo {grp}
@@ -137,6 +158,25 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Indicador de resultados activos */}
+              <div className="mt-3 pt-3 border-t border-teal-200/40 dark:border-teal-900/40 flex items-center justify-between text-xs text-slate-500 dark:text-teal-300/70">
+                <span>
+                  Mostrando <strong>{filteredAuxiliaries.length}</strong> de <strong>{auxiliaries.length}</strong> materias registradas
+                </span>
+                {(searchTerm || selectedSubject !== "all" || selectedGroup !== "all") && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedSubject("all");
+                      setSelectedGroup("all");
+                    }}
+                    className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                  >
+                    Limpiar filtros
+                  </button>
+                )}
               </div>
             </div>
 
@@ -166,13 +206,13 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                 {filteredAuxiliaries.map((aux) => (
                   <div
                     key={aux.id}
-                    className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#0a2026]/90 border border-teal-200/80 dark:border-teal-900/60 hover:border-teal-400 dark:hover:border-teal-400 transition-all duration-200 shadow-sm hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-sm"
+                    className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/70 dark:bg-[#081e19]/80 border border-teal-200/80 dark:border-teal-900/60 hover:border-teal-400 dark:hover:border-teal-500 transition-all duration-200 shadow-xs hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-xs"
                   >
                     <div>
-                      {/* Cabecera de la Tarjeta */}
+                      {/* Cabecera de la Tarjeta con Badges Detallados */}
                       <div className="flex items-center justify-between gap-2 mb-3.5">
                         <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 rounded-xl text-xs font-mono font-bold bg-teal-50 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/80">
+                          <span className="px-3 py-1 rounded-xl text-xs font-mono font-bold bg-teal-100/70 text-teal-800 dark:bg-teal-950/90 dark:text-teal-300 border border-teal-300/60 dark:border-teal-800/80">
                             {aux.subject_code}
                           </span>
                           <span className="px-2.5 py-1 rounded-xl text-xs font-mono font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
@@ -180,7 +220,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                           </span>
                         </div>
                         {aux.semester && (
-                          <span className="text-xs font-mono text-slate-500 dark:text-teal-300/60 flex items-center gap-1">
+                          <span className="text-xs font-mono text-slate-500 dark:text-teal-300/70 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50/50 dark:bg-teal-950/40">
                             <Calendar className="w-3.5 h-3.5 text-teal-500" />
                             {aux.semester}
                           </span>
@@ -194,7 +234,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
 
                       {/* Horario */}
                       {aux.schedule && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-teal-200/60 mt-2 font-mono">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-teal-200/70 mt-2 font-mono">
                           <Clock className="w-3.5 h-3.5 text-teal-500" />
                           <span>{aux.schedule}</span>
                         </div>
@@ -210,27 +250,64 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
 
                     {/* Enlaces a Google Drive */}
                     <div className="mt-6 pt-4 border-t border-teal-100 dark:border-teal-900/50">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-teal-300/60 block mb-2.5">
-                        Carpetas de Google Drive
-                      </span>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 dark:text-teal-300/60 flex items-center gap-1.5">
+                          <Cloud className="w-3 h-3 text-teal-500" />
+                          <span>Carpetas en Google Drive</span>
+                        </span>
+                        <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Verificado</span>
+                        </span>
+                      </div>
 
                       {aux.drive_links && aux.drive_links.length > 0 ? (
                         <div className="space-y-2">
-                          {aux.drive_links.map((link, idx) => (
-                            <a
-                              key={idx}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between p-3 rounded-2xl bg-teal-50/50 hover:bg-teal-100/70 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 border border-teal-200/60 dark:border-teal-800/50 hover:border-teal-400 text-xs text-slate-800 dark:text-teal-100 transition group"
-                            >
-                              <div className="flex items-center gap-2.5 overflow-hidden">
-                                {renderLinkIcon(link.type)}
-                                <span className="truncate font-semibold">{link.title}</span>
+                          {aux.drive_links.map((link, idx) => {
+                            const linkUniqueId = `${aux.id}-${idx}`;
+                            const isCopied = copiedIndex === linkUniqueId;
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between p-3 rounded-2xl bg-teal-50/50 hover:bg-teal-100/70 dark:bg-teal-950/50 dark:hover:bg-teal-900/60 border border-teal-200/60 dark:border-teal-800/50 hover:border-teal-400 text-xs text-slate-800 dark:text-teal-100 transition group"
+                              >
+                                <a
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2.5 overflow-hidden flex-1"
+                                >
+                                  {renderLinkIcon(link.type)}
+                                  <span className="truncate font-semibold">{link.title}</span>
+                                </a>
+
+                                <div className="flex items-center gap-1.5 ml-2">
+                                  {/* Botón Copiar Enlace */}
+                                  <button
+                                    onClick={() => handleCopyLink(link.url, linkUniqueId)}
+                                    title="Copiar enlace de Google Drive"
+                                    className="p-1.5 rounded-lg hover:bg-teal-200/50 dark:hover:bg-teal-800/50 text-slate-500 dark:text-teal-300 transition"
+                                  >
+                                    {isCopied ? (
+                                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+
+                                  <a
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg hover:bg-teal-200/50 dark:hover:bg-teal-800/50 text-teal-600 dark:text-teal-400 transition"
+                                    title="Abrir en pestaña nueva"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                  </a>
+                                </div>
                               </div>
-                              <ExternalLink className="w-3.5 h-3.5 text-teal-500 group-hover:translate-x-0.5 transition-transform flex-shrink-0 ml-2" />
-                            </a>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="p-3 rounded-2xl bg-teal-50/30 dark:bg-teal-950/30 text-center text-xs text-slate-400 dark:text-teal-300/50 border border-teal-200/40 dark:border-teal-800/40">

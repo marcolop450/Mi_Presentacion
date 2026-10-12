@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { SocialLink } from "@/types/database";
 import {
@@ -13,6 +14,12 @@ import {
   GraduationCap,
   Code2,
   Sparkles,
+  Copy,
+  Check,
+  Award,
+  Terminal,
+  Layers,
+  CheckCircle2,
 } from "lucide-react";
 
 interface ProfileCardProps {
@@ -20,6 +27,8 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ socialLinks }: ProfileCardProps) {
+  const [copiedMail, setCopiedMail] = useState(false);
+
   const renderIcon = (iconName: string) => {
     const name = iconName.toLowerCase();
     if (name.includes("github")) return <Github className="w-4 h-4" />;
@@ -29,32 +38,59 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
     return <Globe className="w-4 h-4" />;
   };
 
+  const handleCopyEmail = () => {
+    // Buscar correo en redes o usar por defecto
+    const emailLink = socialLinks.find(
+      (l) => l.url.startsWith("mailto:") || l.label.toLowerCase().includes("correo") || l.label.toLowerCase().includes("mail")
+    );
+    const emailText = emailLink ? emailLink.url.replace("mailto:", "") : "contacto.kiris@uagrm.edu.bo";
+    navigator.clipboard.writeText(emailText);
+    setCopiedMail(true);
+    setTimeout(() => setCopiedMail(false), 2000);
+  };
+
   const activeLinks = socialLinks.filter((item) => item.is_active);
 
-  const techStack = [
-    "Java",
-    "C++",
-    "C#",
-    "Python",
-    "Delphi",
-    "Next.js",
-    "Supabase",
+  const categorizedStack = [
+    {
+      category: "Lenguajes",
+      items: ["Python", "C++", "Java", "C#", "Delphi", "TypeScript"],
+    },
+    {
+      category: "Desarrollo Web & Cloud",
+      items: ["Next.js", "React", "Node.js", "Tailwind CSS", "Supabase", "Git"],
+    },
+    {
+      category: "Áreas de Razonamiento",
+      items: ["Estructuras de Datos", "Inteligencia Artificial", "Clean Architecture", "Algoritmia"],
+    },
   ];
 
-  const focusAreas = [
-    "Inteligencia Artificial",
-    "Clean Code",
-    "Arquitectura de Software",
-    "Desarrollo Móvil",
+  const milestones = [
+    {
+      role: "Fundador de la Plataforma KIRIS",
+      desc: "Diseño y despliegue del ecosistema para centralizar auxiliaturas y recursos de IA en la FICCT.",
+      status: "Activo",
+    },
+    {
+      role: "Auxiliar de Cátedra Universitaria",
+      desc: "Acompañamiento pedagógico y preparación de guías prácticas para asignaturas troncales.",
+      status: "FICCT - UAGRM",
+    },
+    {
+      role: "Investigación en Inteligencia de Sistemas",
+      desc: "Exploración de modelos de lenguaje, automatización de flujos y razonamiento computacional.",
+      status: "En desarrollo",
+    },
   ];
 
   return (
     <section className="py-12 md:py-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-        {/* Centered Circular Avatar with Status Indicator */}
+        {/* Avatar Central con Emblema KIRIS y Estado */}
         <div className="relative mb-6">
           <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-gradient-to-tr from-teal-400 via-emerald-500 to-cyan-500 shadow-xl shadow-teal-500/20">
-            <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-[#07171c] p-2 flex items-center justify-center">
+            <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-[#07171c] p-2.5 flex items-center justify-center">
               <Image
                 src="/images/logo_kiris.png"
                 alt="Marco Alejandro Lopez Velasquez - KIRIS"
@@ -65,19 +101,24 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
               />
             </div>
           </div>
-          {/* Active Status Badge */}
+          {/* Indicador de Disponibilidad */}
           <span
             className="absolute bottom-1 right-2 w-5 h-5 rounded-full bg-emerald-400 border-3 border-white dark:border-[#061317] shadow-sm animate-pulse"
-            title="Activo"
+            title="Disponible"
           />
         </div>
 
-        {/* Identity & Headings */}
+        {/* Nombre y Títulos */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800 mb-2">
+          <Award className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+          <span>ESTUDIANTE &amp; AUXILIAR FICCT</span>
+        </div>
+
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-black text-slate-900 dark:text-white tracking-tight">
           Marco Alejandro Lopez
         </h1>
 
-        <p className="mt-2 text-base sm:text-lg font-medium text-teal-600 dark:text-teal-400">
+        <p className="mt-2 text-base sm:text-lg font-medium text-teal-700 dark:text-teal-300">
           Estudiante de Ingeniería Informática &amp; Creador de KIRIS
         </p>
 
@@ -86,9 +127,30 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
           <span>Santa Cruz de la Sierra, Bolivia • UAGRM - FICCT</span>
         </div>
 
-        {/* Highlight Metrics / Stat Badges */}
-        <div className="grid grid-cols-3 gap-3 w-full max-w-md mt-7">
-          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/80 dark:bg-teal-950/40 backdrop-blur-sm shadow-sm">
+        {/* Botón Rápido Copiar Correo */}
+        <div className="mt-4">
+          <button
+            onClick={handleCopyEmail}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-semibold bg-teal-50/80 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900 text-teal-800 dark:text-teal-200 border border-teal-200/80 dark:border-teal-800/80 transition shadow-xs"
+          >
+            {copiedMail ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                <span>¡Correo copiado al portapapeles!</span>
+              </>
+            ) : (
+              <>
+                <Mail className="w-3.5 h-3.5 text-teal-500" />
+                <span>Copiar correo de contacto</span>
+                <Copy className="w-3 h-3 text-slate-400" />
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Métricas y Datos Destacados */}
+        <div className="grid grid-cols-3 gap-3 w-full max-w-md mt-6">
+          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/70 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
             <span className="block font-mono text-sm sm:text-base font-bold text-teal-700 dark:text-teal-300">
               FICCT
             </span>
@@ -97,7 +159,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
             </span>
           </div>
 
-          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/80 dark:bg-teal-950/40 backdrop-blur-sm shadow-sm">
+          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/70 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
             <span className="block font-mono text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">
               KIRIS
             </span>
@@ -106,8 +168,8 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
             </span>
           </div>
 
-          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/80 dark:bg-teal-950/40 backdrop-blur-sm shadow-sm">
-            <span className="block font-mono text-sm sm:text-base font-bold text-cyan-600 dark:text-cyan-400">
+          <div className="p-3.5 rounded-2xl border border-teal-200/80 dark:border-teal-800/60 bg-white/70 dark:bg-teal-950/40 backdrop-blur-xs shadow-xs">
+            <span className="block font-mono text-sm sm:text-base font-bold text-teal-700 dark:text-teal-300">
               DRIVE
             </span>
             <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -116,62 +178,84 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
           </div>
         </div>
 
-        {/* Authentic Presentation Card */}
-        <div className="w-full mt-7 p-6 sm:p-8 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/90 dark:bg-[#0a2026]/90 backdrop-blur-md shadow-sm text-left">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400 mb-3 flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            <span>Perfil Académico &amp; Iniciativa</span>
-          </h2>
+        {/* Ficha de Presentación */}
+        <div className="w-full mt-7 p-6 sm:p-8 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/75 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-teal-700 dark:text-teal-400 flex items-center gap-2">
+              <GraduationCap className="w-4 h-4" />
+              <span>Perfil Académico &amp; Visión</span>
+            </h2>
+            <span className="text-[11px] font-mono text-slate-400">EXPEDIENTE 2026</span>
+          </div>
           <p className="text-sm sm:text-base text-slate-700 dark:text-teal-100/90 leading-relaxed font-sans">
-            Estudiante de Ingeniería Informática en la Universidad Autónoma Gabriel René Moreno (UAGRM - FICCT). Fundador de la plataforma <strong>KIRIS</strong> (<em>Innovación en Razonamiento e Inteligencia de Sistemas</em>), orientada a estructurar material académico clasificado en Google Drive para auxiliaturas universitarias y compartir herramientas prácticas de ingeniería asistidas por inteligencia artificial.
+            Estudiante de Ingeniería Informática en la Universidad Autónoma Gabriel René Moreno (UAGRM - FICCT). Creador de <strong>KIRIS</strong> (<em>Innovación en Razonamiento e Inteligencia de Sistemas</em>), con el compromiso de estructurar material pedagógico de auxiliaturas clasificado en Google Drive y acercar herramientas de última generación en IA para potenciar a la comunidad universitaria.
           </p>
         </div>
 
-        {/* Stack Tecnológico */}
-        <div className="w-full mt-6 p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/90 dark:bg-[#0a2026]/90 backdrop-blur-md shadow-sm">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4 flex items-center justify-center gap-2">
+        {/* Trayectoria y Roles */}
+        <div className="w-full mt-6 p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/75 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-teal-500" />
+            <span>Trayectoria e Iniciativas Clave</span>
+          </h2>
+          <div className="space-y-3">
+            {milestones.map((m, idx) => (
+              <div
+                key={idx}
+                className="p-3.5 rounded-2xl bg-teal-50/50 dark:bg-teal-950/50 border border-teal-200/60 dark:border-teal-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+              >
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                    {m.role}
+                  </h3>
+                  <p className="text-[11px] text-slate-600 dark:text-teal-200/70 mt-0.5">
+                    {m.desc}
+                  </p>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-teal-100 dark:bg-teal-900/70 text-teal-800 dark:text-teal-200 shrink-0 self-start sm:self-center font-bold">
+                  {m.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stack Tecnológico Organizado */}
+        <div className="w-full mt-6 p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/75 dark:bg-[#081e19]/80 backdrop-blur-xs shadow-xs text-left">
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4 flex items-center gap-2">
             <Code2 className="w-4 h-4 text-teal-500" />
-            <span>Stack Tecnológico</span>
+            <span>Habilidades &amp; Stack Tecnológico</span>
           </h2>
-          <div className="flex flex-wrap justify-center gap-2">
-            {techStack.map((tech) => (
-              <span
-                key={tech}
-                className="px-3.5 py-1.5 rounded-xl bg-teal-50 dark:bg-teal-950/80 border border-teal-200/80 dark:border-teal-800/60 text-teal-800 dark:text-teal-200 text-xs font-mono font-semibold"
-              >
-                {tech}
-              </span>
+          <div className="space-y-3">
+            {categorizedStack.map((group, idx) => (
+              <div key={idx}>
+                <span className="text-[11px] font-mono text-slate-400 dark:text-teal-400 block mb-1.5 font-semibold">
+                  {group.category}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.items.map((item) => (
+                    <span
+                      key={item}
+                      className="px-3 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/70 border border-teal-200/70 dark:border-teal-800/60 text-teal-900 dark:text-teal-200 text-xs font-mono font-medium"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Áreas de Interés */}
-        <div className="w-full mt-6 p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white/90 dark:bg-[#0a2026]/90 backdrop-blur-md shadow-sm">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4 flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-500" />
-            <span>Áreas de Interés</span>
-          </h2>
-          <div className="flex flex-wrap justify-center gap-2">
-            {focusAreas.map((area) => (
-              <span
-                key={area}
-                className="px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 text-xs font-medium"
-              >
-                {area}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Enlaces de Redes Sociales Centrados */}
+        {/* Enlaces de Contacto y Redes Sociales */}
         <div className="w-full mt-8">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-400/80 mb-4">
-            Conexiones &amp; Contacto
+          <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-teal-300 mb-4">
+            Canales de Contacto Directo
           </h2>
 
           {activeLinks.length === 0 ? (
             <p className="text-xs font-mono text-slate-400 italic">
-              Enlaces configurables desde el panel de control.
+              Enlaces configurables desde el panel de control de Supabase.
             </p>
           ) : (
             <div className="flex flex-wrap justify-center gap-3">
@@ -181,7 +265,7 @@ export default function ProfileCard({ socialLinks }: ProfileCardProps) {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-mono font-semibold bg-white hover:bg-teal-50 dark:bg-teal-950/70 dark:hover:bg-teal-900/60 text-slate-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800/80 hover:border-teal-400 transition-all hover:scale-[1.03] shadow-sm"
+                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl text-xs font-mono font-semibold bg-white/80 hover:bg-teal-50 dark:bg-teal-950/70 dark:hover:bg-teal-900/60 text-slate-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800/80 hover:border-teal-400 transition-all hover:scale-[1.02] shadow-xs backdrop-blur-xs"
                 >
                   {renderIcon(link.icon_name)}
                   <span>{link.label}</span>
