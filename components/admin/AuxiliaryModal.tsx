@@ -2,26 +2,28 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Auxiliary, DriveLinkItem } from "@/types/database";
+import { Auxiliary, Subject, Semester, DriveLinkItem } from "@/types/database";
 import AdminModal from "./AdminModal";
 import AdminInput from "./AdminInput";
 import AdminTextarea from "./AdminTextarea";
+import AdminSelect from "./AdminSelect";
 import InitialsAvatar from "@/components/InitialsAvatar";
 
 export interface AuxiliaryModalProps {
   isOpen: boolean;
   mode: "create" | "edit" | null;
   initialData: Auxiliary | null;
+  subjects: Subject[];
+  semesters: Semester[];
   onClose: () => void;
   onSave: (payload: {
-    subject_name: string;
-    subject_code: string;
+    subject_id: string;
+    semester_id: string;
     group_code: string;
-    semester: string;
-    image_url: string | null;
     description: string | null;
     drive_links: DriveLinkItem[];
   }) => Promise<void> | void;
+  onOpenNewSubject?: () => void;
   subjectNameTestId?: string;
   saveBtnTestId?: string;
 }
@@ -30,29 +32,31 @@ export default function AuxiliaryModal({
   isOpen,
   mode,
   initialData,
+  subjects,
+  semesters,
   onClose,
   onSave,
+  onOpenNewSubject,
   subjectNameTestId = "admin-subject-name",
   saveBtnTestId = "admin-save-aux-btn",
 }: AuxiliaryModalProps) {
-  const [subjectName, setSubjectName] = useState("");
-  const [subjectCode, setSubjectCode] = useState("");
+  const [subjectId, setSubjectId] = useState("");
+  const [semesterId, setSemesterId] = useState("");
   const [groupCode, setGroupCode] = useState("");
-  const [semester, setSemester] = useState("II-2026");
-  const [imageUrl, setImageUrl] = useState("");
   const [description, setDescription] = useState("");
   const [driveLinks, setDriveLinks] = useState<DriveLinkItem[]>([
     { title: "Carpeta Principal de Drive", url: "", type: "general" },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Semestre activo por defecto
+  const defaultSemester = semesters.find((s) => s.is_current) || semesters[0];
+
   useEffect(() => {
     if (initialData && mode === "edit") {
-      setSubjectName(initialData.subject_name || "");
-      setSubjectCode(initialData.subject_code || "");
+      setSubjectId(initialData.subject_id || (subjects[0]?.id ?? ""));
+      setSemesterId(initialData.semester_id || (defaultSemester?.id ?? ""));
       setGroupCode(initialData.group_code || "");
-      setSemester(initialData.semester || "II-2026");
-      setImageUrl(initialData.image_url || "");
       setDescription(initialData.description || "");
       setDriveLinks(
         initialData.drive_links?.length
@@ -60,30 +64,28 @@ export default function AuxiliaryModal({
           : [{ title: "Carpeta Principal de Drive", url: "", type: "general" }]
       );
     } else {
-      setSubjectName("");
-      setSubjectCode("");
+      setSubjectId(subjects[0]?.id || "");
+      setSemesterId(defaultSemester?.id || "");
       setGroupCode("");
-      setSemester("II-2026");
-      setImageUrl("");
       setDescription("");
       setDriveLinks([{ title: "Carpeta Principal de Drive", url: "", type: "general" }]);
     }
-  }, [initialData, mode, isOpen]);
+  }, [initialData, mode, subjects, semesters, isOpen]);
+
+  const selectedSubject = subjects.find((s) => s.id === subjectId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subjectName.trim() || !subjectCode.trim() || !groupCode.trim()) {
+    if (!subjectId || !semesterId || !groupCode.trim()) {
       return;
     }
 
     try {
       setIsSubmitting(true);
       await onSave({
-        subject_name: subjectName.trim(),
-        subject_code: subjectCode.trim().toUpperCase(),
+        subject_id: subjectId,
+        semester_id: semesterId,
         group_code: groupCode.trim().toUpperCase(),
-        semester: semester.trim(),
-        image_url: imageUrl.trim() || null,
         description: description.trim() || null,
         drive_links: driveLinks.filter((l) => l.title.trim() && l.url.trim()),
       });
@@ -97,76 +99,87 @@ export default function AuxiliaryModal({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="xl"
-      title={mode === "edit" ? "Editar Auxiliatura" : "Nueva Auxiliatura"}
-      subtitle="Configura la materia, enlaces a carpetas de Google Drive e imagen de portada."
+      title={mode === "edit" ? "Editar Auxiliatura" : "Nueva Auxiliatura (Asignación de Grupo)"}
+      subtitle="Asocia una materia existente a un grupo específico y configura sus carpetas de Google Drive."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-2">
-            <AdminInput
-              label="Nombre de la Materia"
-              required
-              data-testid={subjectNameTestId}
-              placeholder="Ej. Estructuras de Datos I"
-              value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
-            />
-          </div>
-          <div>
-            <AdminInput
-              label="Sigla / Código"
-              required
-              isMono
-              placeholder="INF-220"
-              value={subjectCode}
-              onChange={(e) => setSubjectCode(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <AdminInput
-              label="Grupo"
-              required
-              isMono
-              placeholder="SA o SB"
-              value={groupCode}
-              onChange={(e) => setGroupCode(e.target.value)}
-            />
-          </div>
-          <div>
-            <AdminInput
-              label="Semestre"
-              isMono
-              placeholder="II-2026"
-              value={semester}
-              onChange={(e) => setSemester(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* URL de Imagen con Avatar de Iniciales de Respaldo */}
+        {/* Selección de Materia existente */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-            URL de Imagen de Portada / Logo (Opcional)
-          </label>
-          <div className="flex items-center gap-3">
-            <InitialsAvatar src={imageUrl} name={subjectName || "Materia"} size="md" />
-            <input
-              type="url"
-              placeholder="https://... (Si está vacío, se usarán las iniciales automáticas)"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-teal-200">
+              Materia del Catálogo <span className="text-rose-500">*</span>
+            </label>
+            {onOpenNewSubject && (
+              <button
+                type="button"
+                onClick={onOpenNewSubject}
+                className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Crear nueva materia</span>
+              </button>
+            )}
           </div>
+
+          {subjects.length === 0 ? (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200">
+              No tienes materias registradas en el catálogo. Por favor crea una materia primero.
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <InitialsAvatar
+                src={selectedSubject?.image_url}
+                name={selectedSubject?.name || "Materia"}
+                size="md"
+              />
+              <div className="flex-1">
+                <AdminSelect
+                  required
+                  data-testid={subjectNameTestId}
+                  value={subjectId}
+                  onChange={(e) => setSubjectId(e.target.value)}
+                >
+                  {subjects.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      [{sub.code}] {sub.name}
+                    </option>
+                  ))}
+                </AdminSelect>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Semestre y Grupo */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <AdminSelect
+            label="Semestre Académico"
+            required
+            value={semesterId}
+            onChange={(e) => setSemesterId(e.target.value)}
+          >
+            {semesters.map((sem) => (
+              <option key={sem.id} value={sem.id}>
+                {sem.code} {sem.is_current ? "★ (Semestre Actual)" : ""} - {sem.name}
+              </option>
+            ))}
+          </AdminSelect>
+
+          <AdminInput
+            label="Código de Grupo"
+            required
+            isMono
+            placeholder="Ej. SA, SB, SC"
+            value={groupCode}
+            onChange={(e) => setGroupCode(e.target.value)}
+            helperText="Identificador del grupo universitario que impartes."
+          />
         </div>
 
         <AdminTextarea
-          label="Descripción o Indicaciones"
+          label="Descripción o Indicaciones del Grupo (Opcional)"
           rows={2}
-          placeholder="Detalles sobre el avance, materiales o avisos..."
+          placeholder="Avisos sobre modalidad, aula, ponderación o entrega de prácticos..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
@@ -239,7 +252,7 @@ export default function AuxiliaryModal({
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || subjects.length === 0}
             data-testid={saveBtnTestId}
             className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25 transition active:scale-95 disabled:opacity-50"
           >
@@ -247,7 +260,7 @@ export default function AuxiliaryModal({
               ? "Guardando..."
               : mode === "edit"
               ? "Guardar Cambios"
-              : "Crear Auxiliatura"}
+              : "Asignar Auxiliatura"}
           </button>
         </div>
       </form>

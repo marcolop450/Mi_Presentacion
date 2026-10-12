@@ -9,13 +9,17 @@ import {
   defaultSocialLinks, 
   defaultCategories, 
   defaultRecommendations, 
-  defaultAuxiliaries 
+  defaultAuxiliaries,
+  defaultSubjects,
+  defaultSemesters,
 } from "@/lib/data/initialData";
 import { 
   SocialLink, 
   Category, 
   Recommendation, 
   Auxiliary, 
+  Subject,
+  Semester,
   DriveLinkItem 
 } from "@/types/database";
 import { 
@@ -37,9 +41,10 @@ import {
   Menu, 
   Sparkles, 
   ArrowUpRight, 
-  ChevronRight, 
   ShieldCheck, 
-  Loader2 
+  Loader2,
+  Calendar,
+  BookOpen
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -49,12 +54,14 @@ import {
   AdminPageHeader,
   AdminEmptyState,
   AuxiliaryModal,
+  SubjectModal,
+  SemesterModal,
   CategoryModal,
   RecommendationModal,
   SocialModal,
 } from "@/components/admin";
 
-type AdminTab = "resumen" | "auxiliaturas" | "categorias" | "recomendaciones" | "redes";
+type AdminTab = "resumen" | "semestres" | "materias" | "auxiliaturas" | "categorias" | "recomendaciones" | "redes";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -64,21 +71,26 @@ export default function AdminDashboardPage() {
   const [adminEmail, setAdminEmail] = useState("marcolop450@gmail.com");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Estados de datos
+  // Estados de datos normalizados
+  const [semestersList, setSemestersList] = useState<Semester[]>(defaultSemesters);
+  const [subjectsList, setSubjectsList] = useState<Subject[]>(defaultSubjects);
   const [auxiliariesList, setAuxiliariesList] = useState<Auxiliary[]>(defaultAuxiliaries);
-  const [recommendationsList, setRecommendationsList] = useState<Recommendation[]>(defaultRecommendations);
   const [categoriesList, setCategoriesList] = useState<Category[]>(defaultCategories);
+  const [recommendationsList, setRecommendationsList] = useState<Recommendation[]>(defaultRecommendations);
   const [socialLinksList, setSocialLinksList] = useState<SocialLink[]>(defaultSocialLinks);
 
   // Búsquedas y filtros
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+  const [selectedSemesterFilter, setSelectedSemesterFilter] = useState("all");
 
   // Modales de Creación y Edición
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
-  const [activeModalType, setActiveModalType] = useState<"aux" | "cat" | "rec" | "soc" | null>(null);
+  const [activeModalType, setActiveModalType] = useState<"sem" | "sub" | "aux" | "cat" | "rec" | "soc" | null>(null);
 
   // Elementos seleccionados para editar
+  const [selectedSem, setSelectedSem] = useState<Semester | null>(null);
+  const [selectedSub, setSelectedSub] = useState<Subject | null>(null);
   const [selectedAux, setSelectedAux] = useState<Auxiliary | null>(null);
   const [selectedCat, setSelectedCat] = useState<Category | null>(null);
   const [selectedRec, setSelectedRec] = useState<Recommendation | null>(null);
@@ -90,7 +102,7 @@ export default function AdminDashboardPage() {
 
   // Modal de confirmación para eliminar
   const [deleteTarget, setDeleteTarget] = useState<{
-    type: "aux" | "cat" | "rec" | "soc";
+    type: "sem" | "sub" | "aux" | "cat" | "rec" | "soc";
     id: string;
     title: string;
   } | null>(null);
@@ -137,20 +149,23 @@ export default function AdminDashboardPage() {
     setIsLoading(true);
 
     try {
-      const [auxRes, catRes, recRes, socRes] = await Promise.all([
-        supabase.from("auxiliaries").select("*").order("created_at", { ascending: false }),
+      const [semRes, catRes, subRes, auxRes, recRes, socRes] = await Promise.all([
+        supabase.from("semesters").select("*").order("display_order", { ascending: true }),
         supabase.from("categories").select("*").order("display_order", { ascending: true }),
+        supabase.from("subjects").select("*, category:categories(*)").order("code", { ascending: true }),
+        supabase.from("auxiliaries").select("*, subject:subjects(*), semester:semesters(*)").order("created_at", { ascending: false }),
         supabase.from("recommendations").select("*, category:categories(*)").order("created_at", { ascending: false }),
         supabase.from("social_links").select("*").order("display_order", { ascending: true }),
       ]);
 
-      if (auxRes.data) setAuxiliariesList(auxRes.data as Auxiliary[]);
+      if (semRes.data) setSemestersList(semRes.data as Semester[]);
       if (catRes.data) setCategoriesList(catRes.data as Category[]);
+      if (subRes.data) setSubjectsList(subRes.data as Subject[]);
+      if (auxRes.data) setAuxiliariesList(auxRes.data as Auxiliary[]);
       if (recRes.data) setRecommendationsList(recRes.data as Recommendation[]);
       if (socRes.data) setSocialLinksList(socRes.data as SocialLink[]);
-    } catch (err) {
-      console.error("Error al sincronizar datos:", err);
-      showToast("Error de conexión al cargar datos.");
+    } catch {
+      showToast("Problemas de Servidor al sincronizar datos.");
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +181,99 @@ export default function AdminDashboardPage() {
   };
 
   // -------------------------------------------------------------
-  // CRUD AUXILIATURAS
+  // CRUD SEMESTRES (NUEVO MAESTRO)
+  // -------------------------------------------------------------
+  const openSemesterModal = (sem?: Semester) => {
+    setSelectedSem(sem || null);
+    setModalMode(sem ? "edit" : "create");
+    setActiveModalType("sem");
+  };
+
+  const handleSaveSemester = async (payload: {
+    code: string;
+    name: string;
+    is_current: boolean;
+    display_order: number;
+  }) => {
+    const supabase = createClient();
+    if (supabase) {
+      // Si se marca como actual, desmarcar otros si es necesario
+      if (payload.is_current) {
+        await supabase.from("semesters").update({ is_current: false }).neq("id", selectedSem?.id || "00000000-0000-0000-0000-000000000000");
+      }
+
+      if (modalMode === "edit" && selectedSem?.id) {
+        const { error } = await supabase.from("semesters").update(payload).eq("id", selectedSem.id);
+        if (error) {
+          showToast("Problemas de Servidor al actualizar el semestre.");
+          return;
+        }
+        showToast("Semestre actualizado exitosamente.");
+      } else {
+        const { error } = await supabase.from("semesters").insert([payload]);
+        if (error) {
+          showToast("Problemas de Servidor al registrar el semestre.");
+          return;
+        }
+        showToast("Nuevo semestre académico registrado.");
+      }
+      loadAllData(supabase);
+    }
+
+    setActiveModalType(null);
+  };
+
+  const toggleSemesterCurrent = async (sem: Semester) => {
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.from("semesters").update({ is_current: false }).neq("id", sem.id);
+      await supabase.from("semesters").update({ is_current: !sem.is_current }).eq("id", sem.id);
+      loadAllData(supabase);
+      showToast(`Semestre ${!sem.is_current ? "marcado como actual" : "desmarcado"}.`);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // CRUD MATERIAS (NUEVO MAESTRO - CATÁLOGO FORMAL)
+  // -------------------------------------------------------------
+  const openSubjectModal = (sub?: Subject) => {
+    setSelectedSub(sub || null);
+    setModalMode(sub ? "edit" : "create");
+    setActiveModalType("sub");
+  };
+
+  const handleSaveSubject = async (payload: {
+    name: string;
+    code: string;
+    category_id?: string;
+    image_url: string | null;
+    description: string | null;
+  }) => {
+    const supabase = createClient();
+    if (supabase) {
+      if (modalMode === "edit" && selectedSub?.id) {
+        const { error } = await supabase.from("subjects").update(payload).eq("id", selectedSub.id);
+        if (error) {
+          showToast("Problemas de Servidor al actualizar la materia.");
+          return;
+        }
+        showToast("Materia actualizada exitosamente.");
+      } else {
+        const { error } = await supabase.from("subjects").insert([payload]);
+        if (error) {
+          showToast("Problemas de Servidor al registrar la materia.");
+          return;
+        }
+        showToast("Nueva materia registrada en el catálogo.");
+      }
+      loadAllData(supabase);
+    }
+
+    setActiveModalType(null);
+  };
+
+  // -------------------------------------------------------------
+  // CRUD AUXILIATURAS (NORMALIZADO: ASOCIACIÓN GRUPO + DRIVE)
   // -------------------------------------------------------------
   const openAuxModal = (aux?: Auxiliary) => {
     setSelectedAux(aux || null);
@@ -175,11 +282,9 @@ export default function AdminDashboardPage() {
   };
 
   const handleSaveAuxiliary = async (payload: {
-    subject_name: string;
-    subject_code: string;
+    subject_id: string;
+    semester_id: string;
     group_code: string;
-    semester: string;
-    image_url: string | null;
     description: string | null;
     drive_links: DriveLinkItem[];
   }) => {
@@ -192,7 +297,7 @@ export default function AdminDashboardPage() {
         }).eq("id", selectedAux.id);
 
         if (error) {
-          showToast("Error al actualizar la auxiliatura.");
+          showToast("Problemas de Servidor al actualizar la auxiliatura.");
           return;
         }
         showToast("Auxiliatura actualizada exitosamente.");
@@ -203,10 +308,14 @@ export default function AdminDashboardPage() {
         }]);
 
         if (error) {
-          showToast("Error al guardar en Supabase.");
+          if (error.message?.includes("uq_auxiliary_subject_semester_group")) {
+            showToast("Ya existe este grupo registrado para esta materia en el mismo semestre.");
+            return;
+          }
+          showToast("Problemas de Servidor al guardar la auxiliatura.");
           return;
         }
-        showToast("Nueva auxiliatura registrada.");
+        showToast("Nueva auxiliatura de grupo asignada.");
       }
       loadAllData(supabase);
     }
@@ -245,14 +354,14 @@ export default function AdminDashboardPage() {
       if (modalMode === "edit" && selectedCat?.id) {
         const { error } = await supabase.from("categories").update(payload).eq("id", selectedCat.id);
         if (error) {
-          showToast("Error al actualizar la categoría.");
+          showToast("Problemas de Servidor al actualizar la categoría.");
           return;
         }
         showToast("Categoría actualizada exitosamente.");
       } else {
         const { error } = await supabase.from("categories").insert([payload]);
         if (error) {
-          showToast("Error al guardar categoría en Supabase.");
+          showToast("Problemas de Servidor al guardar la categoría.");
           return;
         }
         showToast("Nueva categoría creada exitosamente.");
@@ -295,14 +404,14 @@ export default function AdminDashboardPage() {
       if (modalMode === "edit" && selectedRec?.id) {
         const { error } = await supabase.from("recommendations").update(payload).eq("id", selectedRec.id);
         if (error) {
-          showToast("Error al actualizar recomendación.");
+          showToast("Problemas de Servidor al actualizar el recurso.");
           return;
         }
         showToast("Recurso actualizado con éxito.");
       } else {
         const { error } = await supabase.from("recommendations").insert([payload]);
         if (error) {
-          showToast("Error al guardar recurso.");
+          showToast("Problemas de Servidor al guardar el recurso.");
           return;
         }
         showToast("Nuevo recurso publicado.");
@@ -353,14 +462,14 @@ export default function AdminDashboardPage() {
       if (modalMode === "edit" && selectedSoc?.id) {
         const { error } = await supabase.from("social_links").update(payload).eq("id", selectedSoc.id);
         if (error) {
-          showToast("Error al actualizar enlace.");
+          showToast("Problemas de Servidor al actualizar el enlace.");
           return;
         }
         showToast("Enlace social actualizado.");
       } else {
         const { error } = await supabase.from("social_links").insert([payload]);
         if (error) {
-          showToast("Error al guardar enlace social.");
+          showToast("Problemas de Servidor al guardar el enlace social.");
           return;
         }
         showToast("Nueva red social añadida.");
@@ -372,7 +481,7 @@ export default function AdminDashboardPage() {
   };
 
   // -------------------------------------------------------------
-  // ELIMINACIÓN CONFIRMADA
+  // ELIMINACIÓN CONFIRMADA GENERAL (Heurística 5)
   // -------------------------------------------------------------
   const executeDelete = async () => {
     if (!deleteTarget) return;
@@ -381,12 +490,18 @@ export default function AdminDashboardPage() {
 
     if (supabase) {
       const tableMap = {
+        sem: "semesters",
+        sub: "subjects",
         aux: "auxiliaries",
         cat: "categories",
         rec: "recommendations",
         soc: "social_links",
       };
-      await supabase.from(tableMap[type]).delete().eq("id", id);
+      const { error } = await supabase.from(tableMap[type]).delete().eq("id", id);
+      if (error) {
+        showToast("Problemas de Servidor al eliminar el registro.");
+        return;
+      }
       loadAllData(supabase);
     }
 
@@ -396,15 +511,39 @@ export default function AdminDashboardPage() {
 
   // Filtros en memoria
   const filteredAuxiliaries = useMemo(() => {
-    if (!searchQuery) return auxiliariesList;
+    return auxiliariesList.filter((a) => {
+      const subjName = a.subject?.name || a.subject_name || "";
+      const subjCode = a.subject?.code || a.subject_code || "";
+      const group = a.group_code || "";
+      const desc = a.description || "";
+      const q = searchQuery.toLowerCase();
+
+      const matchSearch =
+        !searchQuery ||
+        subjName.toLowerCase().includes(q) ||
+        subjCode.toLowerCase().includes(q) ||
+        group.toLowerCase().includes(q) ||
+        desc.toLowerCase().includes(q);
+
+      const matchSemester =
+        selectedSemesterFilter === "all" ||
+        a.semester_id === selectedSemesterFilter ||
+        a.semester?.code === selectedSemesterFilter;
+
+      return matchSearch && matchSemester;
+    });
+  }, [auxiliariesList, searchQuery, selectedSemesterFilter]);
+
+  const filteredSubjects = useMemo(() => {
+    if (!searchQuery) return subjectsList;
     const q = searchQuery.toLowerCase();
-    return auxiliariesList.filter(
-      (a) =>
-        a.subject_name.toLowerCase().includes(q) ||
-        a.subject_code.toLowerCase().includes(q) ||
-        a.group_code.toLowerCase().includes(q)
+    return subjectsList.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.code.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q))
     );
-  }, [auxiliariesList, searchQuery]);
+  }, [subjectsList, searchQuery]);
 
   const filteredRecommendations = useMemo(() => {
     return recommendationsList.filter((r) => {
@@ -439,6 +578,37 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
+
+  // Estructura jerárquica del sidebar según el modelo de negocio
+  const sidebarNavGroups = [
+    {
+      groupTitle: "PANEL PRINCIPAL",
+      items: [
+        { id: "resumen", label: "Resumen General", icon: Home, count: null },
+      ],
+    },
+    {
+      groupTitle: "GESTIÓN ACADÉMICA (FICCT)",
+      items: [
+        { id: "semestres", label: "Semestres", icon: Calendar, count: semestersList.length },
+        { id: "materias", label: "Catálogo de Materias", icon: BookOpen, count: subjectsList.length },
+        { id: "auxiliaturas", label: "Auxiliaturas (Grupos)", icon: GraduationCap, count: auxiliariesList.length },
+      ],
+    },
+    {
+      groupTitle: "ECOSISTEMA DE RECURSOS & IA",
+      items: [
+        { id: "categorias", label: "Categorías", icon: Layers, count: categoriesList.length },
+        { id: "recomendaciones", label: "Recursos y Recomendaciones", icon: Compass, count: recommendationsList.length },
+      ],
+    },
+    {
+      groupTitle: "CONTACTO & PRESENCIA",
+      items: [
+        { id: "redes", label: "Redes y Canales", icon: Share2, count: socialLinksList.length },
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#dff0fa] dark:bg-[#061317] text-slate-900 dark:text-white transition-colors duration-200">
@@ -476,16 +646,16 @@ export default function AdminDashboardPage() {
       </header>
 
       {/* ------------------------------------------------------------- */}
-      {/* SIDEBAR PARA ESCRITORIO (Y DRAWER EN MÓVIL)                   */}
+      {/* SIDEBAR JERÁRQUICO (ORDEN ADMINISTRADOR DE NEGOCIO)            */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed md:sticky top-0 left-0 h-screen w-72 shrink-0 z-50 md:z-10 bg-white/95 dark:bg-[#07191d]/95 border-r border-slate-300 dark:border-teal-800/60 flex flex-col justify-between p-5 backdrop-blur-xl transition-transform duration-300 ease-out ${
+        className={`fixed md:sticky top-0 left-0 h-screen w-72 shrink-0 z-50 md:z-10 bg-white/95 dark:bg-[#07191d]/95 border-r border-slate-300 dark:border-teal-800/60 flex flex-col justify-between p-5 backdrop-blur-xl transition-transform duration-300 ease-out overflow-y-auto ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         <div>
           {/* Logo & Emblema */}
-          <div className="flex items-center justify-between pb-5 border-b border-slate-200 dark:border-teal-900/60">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-teal-900/60">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-2xl p-0.5 bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-400 shadow-md flex items-center justify-center">
                 <div className="w-full h-full rounded-[14px] bg-white dark:bg-[#071915] p-1.5 flex items-center justify-center">
@@ -510,7 +680,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Insignia de Administrador Autenticado */}
-          <div className="mt-4 p-3 rounded-2xl bg-teal-50/70 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/60 flex items-center gap-2.5">
+          <div className="mt-3.5 p-3 rounded-2xl bg-teal-50/70 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/60 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-teal-600 text-white font-display font-bold flex items-center justify-center text-xs shadow-xs">
               ML
             </div>
@@ -525,55 +695,56 @@ export default function AdminDashboardPage() {
             <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
           </div>
 
-          {/* Menú de Navegación Principal */}
-          <nav className="mt-6 space-y-1.5" aria-label="Secciones del Administrador">
-            {[
-              { id: "resumen", label: "Resumen General", icon: Home, count: null },
-              { id: "auxiliaturas", label: "Auxiliaturas", icon: GraduationCap, count: auxiliariesList.length },
-              { id: "categorias", label: "Categorías de IA", icon: Layers, count: categoriesList.length },
-              { id: "recomendaciones", label: "Recursos y Recomendaciones", icon: Compass, count: recommendationsList.length },
-              { id: "redes", label: "Redes y Contacto", icon: Share2, count: socialLinksList.length },
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  data-testid={item.id === "resumen" ? "admin-tab-resumen" : `admin-tab-${item.id}`} /* data-testid="admin-tab-resumen" */
-                  onClick={() => {
-                    setActiveTab(item.id as AdminTab);
-                    setMobileMenuOpen(false);
-                    setSearchQuery("");
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all ${
-                    isActive
-                      ? "bg-teal-600 text-white shadow-lg shadow-teal-600/25 scale-[1.01]"
-                      : "text-slate-700 dark:text-teal-200/80 hover:bg-slate-100 dark:hover:bg-teal-950/60"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.count !== null && (
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+          {/* Menú de Navegación Organizado por Jerarquía */}
+          <nav className="mt-5 space-y-4" aria-label="Secciones del Administrador">
+            {sidebarNavGroups.map((group, gIdx) => (
+              <div key={gIdx} className="space-y-1">
+                <span className="text-[9px] font-mono font-bold text-slate-400 dark:text-teal-400/60 px-3 tracking-wider uppercase">
+                  {group.groupTitle}
+                </span>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      data-testid={item.id === "resumen" ? "admin-tab-resumen" : `admin-tab-${item.id}`} /* data-testid="admin-tab-resumen" */
+                      onClick={() => {
+                        setActiveTab(item.id as AdminTab);
+                        setMobileMenuOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                         isActive
-                          ? "bg-white/20 text-white font-bold"
-                          : "bg-slate-200/80 dark:bg-teal-900/60 text-slate-600 dark:text-teal-300"
+                          ? "bg-teal-600 text-white shadow-lg shadow-teal-600/25 scale-[1.01]"
+                          : "text-slate-700 dark:text-teal-200/80 hover:bg-slate-100 dark:hover:bg-teal-950/60"
                       }`}
                     >
-                      {item.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.count !== null && (
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                            isActive
+                              ? "bg-white/20 text-white font-bold"
+                              : "bg-slate-200/80 dark:bg-teal-900/60 text-slate-600 dark:text-teal-300"
+                          }`}
+                        >
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
 
         {/* Footer del Sidebar */}
-        <div className="pt-4 border-t border-slate-200 dark:border-teal-900/60 space-y-2.5">
+        <div className="pt-4 mt-4 border-t border-slate-200 dark:border-teal-900/60 space-y-2 shrink-0">
           <div className="flex items-center justify-between px-1">
             <span className="text-[11px] font-semibold text-slate-500 dark:text-teal-300/70">Tema</span>
             <ThemeToggle />
@@ -582,9 +753,9 @@ export default function AdminDashboardPage() {
           <Link
             href="/"
             target="_blank"
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-teal-200/80 hover:bg-slate-100 dark:hover:bg-teal-950/60 transition"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-teal-200/80 hover:bg-slate-100 dark:hover:bg-teal-950/60 transition"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <ExternalLink className="w-4 h-4 text-teal-500" />
               <span>Ver Portal Público</span>
             </div>
@@ -593,7 +764,7 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
           >
             <LogOut className="w-4 h-4" />
             <span>Cerrar Sesión</span>
@@ -615,58 +786,72 @@ export default function AdminDashboardPage() {
                 Panel de Control General
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-200/80 mt-1">
-                Ecosistema administrativo oficial de KIRIS. Administra tus materias, carpetas de Drive y herramientas curadas de IA.
+                Ecosistema administrativo oficial de KIRIS. Modelo de datos normalizado para materias, semestres, auxiliaturas y recursos de IA.
               </p>
             </div>
 
             {/* Tarjetas de Métricas KPI Reutilizables */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               <AdminStatCard
+                label="Catálogo de Materias"
+                count={subjectsList.length}
+                sub="Asignaturas oficiales"
+                icon={BookOpen}
+                color="from-cyan-500 to-blue-600"
+                onClick={() => setActiveTab("materias")}
+              />
+              <AdminStatCard
                 label="Auxiliaturas Activas"
                 count={auxiliariesList.filter((a) => a.is_active).length}
-                sub={`${auxiliariesList.length} registradas en total`}
+                sub={`${auxiliariesList.length} grupos asignados`}
                 icon={GraduationCap}
                 color="from-emerald-500 to-teal-600"
                 onClick={() => setActiveTab("auxiliaturas")}
               />
               <AdminStatCard
+                label="Semestres Académicos"
+                count={semestersList.length}
+                sub={semestersList.find((s) => s.is_current)?.code ? `Actual: ${semestersList.find((s) => s.is_current)?.code}` : "Períodos lectivos"}
+                icon={Calendar}
+                color="from-teal-500 to-emerald-600"
+                onClick={() => setActiveTab("semestres")}
+              />
+              <AdminStatCard
                 label="Recursos de IA"
                 count={recommendationsList.length}
-                sub={`${recommendationsList.filter((r) => r.is_featured).length} destacados`}
+                sub={`${categoriesList.length} categorías`}
                 icon={Compass}
                 color="from-teal-500 to-cyan-600"
                 onClick={() => setActiveTab("recomendaciones")}
-              />
-              <AdminStatCard
-                label="Categorías de IA"
-                count={categoriesList.length}
-                sub="Orden temático dinámico"
-                icon={Layers}
-                color="from-cyan-500 to-blue-600"
-                onClick={() => setActiveTab("categorias")}
-              />
-              <AdminStatCard
-                label="Redes y Contacto"
-                count={socialLinksList.filter((s) => s.is_active).length}
-                sub={`${socialLinksList.length} canales configurados`}
-                icon={Share2}
-                color="from-blue-600 to-indigo-600"
-                onClick={() => setActiveTab("redes")}
               />
             </div>
 
             {/* Acciones Rápidas */}
             <div className="p-6 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-700/60 shadow-xs">
               <h3 className="text-sm font-display font-bold text-slate-900 dark:text-white mb-3">
-                Acciones Rápidas
+                Acciones Rápidas de Administración
               </h3>
               <div className="flex flex-wrap gap-2.5">
                 <button
-                  onClick={() => openAuxModal()}
+                  onClick={() => openSubjectModal()}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Nueva Auxiliatura</span>
+                  <span>Nueva Materia</span>
+                </button>
+                <button
+                  onClick={() => openAuxModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-900 transition active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Asignar Grupo de Auxiliatura</span>
+                </button>
+                <button
+                  onClick={() => openSemesterModal()}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-900 transition active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nuevo Semestre</span>
                 </button>
                 <button
                   onClick={() => openRecommendationModal()}
@@ -674,20 +859,6 @@ export default function AdminDashboardPage() {
                 >
                   <Plus className="w-4 h-4" />
                   <span>Nuevo Recurso de IA</span>
-                </button>
-                <button
-                  onClick={() => openCategoryModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-900 transition active:scale-95"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nueva Categoría</span>
-                </button>
-                <button
-                  onClick={() => openSocialModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-white dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-900 transition active:scale-95"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Nueva Red Social</span>
                 </button>
                 <button
                   onClick={() => loadAllData()}
@@ -703,148 +874,382 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================== */}
-        {/* PESTAÑA 2: AUXILIATURAS (CRUD COMPLETO - MODULAR)           */}
+        {/* PESTAÑA 2: SEMESTRES ACADÉMICOS (NUEVO MÓDULO NORMALIZADO)  */}
         {/* =========================================================== */}
-        {activeTab === "auxiliaturas" && (
+        {activeTab === "semestres" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <AdminPageHeader
-              title="Gestión de Auxiliaturas"
-              description="Crea, edita y organiza las materias de auxiliatura con sus enlaces oficiales a Google Drive."
-              actionLabel="Registrar Nueva Auxiliatura"
-              onAction={() => openAuxModal()}
+              title="Semestres Académicos"
+              description="Define los períodos universitarios y marca cuál es el semestre en curso para organizar las auxiliaturas."
+              actionLabel="Nuevo Semestre"
+              onAction={() => openSemesterModal()}
             />
 
-            {/* Barra de Búsqueda */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-teal-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre de materia, sigla o grupo..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-teal-500"
-              />
-            </div>
-
-            {/* Listado de Auxiliaturas */}
-            {filteredAuxiliaries.length === 0 ? (
+            {semestersList.length === 0 ? (
               <AdminEmptyState
-                icon={GraduationCap}
-                title="Sin auxiliaturas registradas"
-                description="Registra tu primera materia de auxiliatura con el botón superior para sincronizarla en el portal."
-                actionLabel="Registrar Auxiliatura"
-                onAction={() => openAuxModal()}
+                icon={Calendar}
+                title="Sin semestres registrados"
+                description="Crea tu primer período académico (ej. II-2026) para asignarlo a tus materias."
+                actionLabel="Registrar Semestre"
+                onAction={() => openSemesterModal()}
               />
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filteredAuxiliaries.map((aux) => (
-                  <div
-                    key={aux.id}
-                    className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3">
-                          <InitialsAvatar src={aux.image_url} name={aux.subject_name} size="md" />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
-                                {aux.subject_code}
-                              </span>
-                              <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-                                Grupo {aux.group_code}
-                              </span>
-                            </div>
-                            <h3 className="text-base font-display font-bold text-slate-900 dark:text-white mt-1 leading-snug">
-                              {aux.subject_name}
-                            </h3>
-                          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {semestersList.map((sem) => {
+                  const linkedAuxCount = auxiliariesList.filter((a) => a.semester_id === sem.id || a.semester?.code === sem.code).length;
+                  return (
+                    <div
+                      key={sem.id}
+                      className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
+                            {sem.code}
+                          </span>
+                          <button
+                            onClick={() => toggleSemesterCurrent(sem)}
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono transition-colors ${
+                              sem.is_current
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300"
+                                : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            }`}
+                          >
+                            {sem.is_current ? "★ SEMESTRE ACTUAL" : "HISTÓRICO"}
+                          </button>
                         </div>
 
-                        {/* Switch Activo/Inactivo */}
+                        <h3 className="text-base font-display font-bold text-slate-900 dark:text-white">
+                          {sem.name}
+                        </h3>
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-teal-300/70 block mt-1">
+                          {linkedAuxCount} grupo(s) de auxiliatura asociados
+                        </span>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-slate-200 dark:border-teal-900/40 flex items-center justify-end gap-2">
                         <button
-                          onClick={() => toggleAuxiliaryActive(aux)}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono transition-colors ${
-                            aux.is_active
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
-                              : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                          }`}
+                          onClick={() => openSemesterModal(sem)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-slate-100 dark:hover:bg-teal-950 transition"
                         >
-                          {aux.is_active ? "PÚBLICO" : "OCULTO"}
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget({ type: "sem", id: sem.id, title: sem.name })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Eliminar</span>
                         </button>
                       </div>
-
-                      {aux.description && (
-                        <p className="text-xs text-slate-600 dark:text-teal-100/70 line-clamp-2 mt-2 leading-relaxed">
-                          {aux.description}
-                        </p>
-                      )}
-
-                      {/* Enlaces de Google Drive */}
-                      <div className="mt-4 pt-3 border-t border-slate-200 dark:border-teal-900/40 space-y-1.5">
-                        <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-teal-400/80 uppercase">
-                          Carpetas en Google Drive ({aux.drive_links?.length || 0}):
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {aux.drive_links?.map((link, lIdx) => (
-                            <a
-                              key={lIdx}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800/80 text-[11px] font-mono font-medium text-teal-800 dark:text-teal-300 hover:border-teal-500 transition"
-                            >
-                              <FolderOpen className="w-3 h-3 text-teal-500" />
-                              <span className="truncate max-w-[150px]">{link.title}</span>
-                              <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
                     </div>
-
-                    {/* Botones de Acción (Editar y Eliminar) */}
-                    <div className="mt-5 pt-3 border-t border-slate-200 dark:border-teal-900/40 flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openAuxModal(aux)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-slate-100 dark:hover:bg-teal-950 transition"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Editar</span>
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget({ type: "aux", id: aux.id, title: aux.subject_name })}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Eliminar</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
         {/* =========================================================== */}
-        {/* PESTAÑA 3: CATEGORÍAS DE IA (CRUD COMPLETO - MODULAR)       */}
+        {/* PESTAÑA 3: MATERIAS (CATÁLOGO MAESTRO FORMAL NORMALIZADO)   */}
+        {/* =========================================================== */}
+        {activeTab === "materias" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <AdminPageHeader
+              title="Catálogo de Materias"
+              description="Registra cada asignatura una sola vez con su sigla oficial, categoría e imagen. No incluye grupos."
+              actionLabel="Registrar Nueva Materia"
+              onAction={() => openSubjectModal()}
+            />
+
+            {/* Barra de Búsqueda de Materias */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-teal-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Buscar materia por nombre, sigla (INF-220) o descripción..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-teal-500"
+              />
+            </div>
+
+            {filteredSubjects.length === 0 ? (
+              <AdminEmptyState
+                icon={BookOpen}
+                title="Sin materias registradas en el catálogo"
+                description="Registra las asignaturas universitarias (ej. INF-220 Estructuras de Datos I) para poder asignarles grupos."
+                actionLabel="Registrar Materia"
+                onAction={() => openSubjectModal()}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredSubjects.map((sub) => {
+                  const linkedGroups = auxiliariesList.filter((a) => a.subject_id === sub.id || a.subject_code === sub.code);
+                  return (
+                    <div
+                      key={sub.id}
+                      className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <InitialsAvatar src={sub.image_url} name={sub.name} size="md" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
+                                  {sub.code}
+                                </span>
+                                {sub.category && (
+                                  <span
+                                    className="text-[10px] font-mono px-2 py-0.5 rounded-md border"
+                                    style={{
+                                      backgroundColor: `${sub.category.color || "#0d9488"}20`,
+                                      borderColor: `${sub.category.color || "#0d9488"}50`,
+                                      color: sub.category.color || "#0d9488",
+                                    }}
+                                  >
+                                    {sub.category.name}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-base font-display font-bold text-slate-900 dark:text-white mt-1 leading-snug">
+                                {sub.name}
+                              </h3>
+                            </div>
+                          </div>
+                        </div>
+
+                        {sub.description && (
+                          <p className="text-xs text-slate-600 dark:text-teal-100/70 line-clamp-2 mt-2 leading-relaxed">
+                            {sub.description}
+                          </p>
+                        )}
+
+                        <div className="mt-4 pt-3 border-t border-slate-200 dark:border-teal-900/40">
+                          <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-teal-400/80 uppercase">
+                            Grupos Asignados ({linkedGroups.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {linkedGroups.length === 0 ? (
+                              <span className="text-[11px] text-slate-400 italic">Sin grupos activos</span>
+                            ) : (
+                              linkedGroups.map((g) => (
+                                <span
+                                  key={g.id}
+                                  className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-teal-800 font-semibold"
+                                >
+                                  Grupo {g.group_code}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-slate-200 dark:border-teal-900/40 flex items-center justify-between">
+                        <button
+                          onClick={() => {
+                            setSelectedAux(null);
+                            setModalMode("create");
+                            setActiveModalType("aux");
+                          }}
+                          className="text-[11px] font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Asignar Grupo</span>
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openSubjectModal(sub)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-slate-100 dark:hover:bg-teal-950 transition"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget({ type: "sub", id: sub.id, title: `${sub.code} - ${sub.name}` })}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =========================================================== */}
+        {/* PESTAÑA 4: AUXILIATURAS (GRUPOS ASIGNADOS CON GOOGLE DRIVE)  */}
+        {/* =========================================================== */}
+        {activeTab === "auxiliaturas" && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <AdminPageHeader
+              title="Gestión de Auxiliaturas (Grupos y Drive)"
+              description="Asigna grupos a las materias del catálogo y administra sus carpetas oficiales de Google Drive."
+              actionLabel="Asignar Nuevo Grupo"
+              onAction={() => openAuxModal()}
+            />
+
+            {/* Filtros por Semestre & Buscador */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-teal-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar auxiliatura por materia, código o grupo..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs placeholder-slate-400 focus:outline-none focus:border-teal-500"
+                />
+              </div>
+
+              <select
+                value={selectedSemesterFilter}
+                onChange={(e) => setSelectedSemesterFilter(e.target.value)}
+                className="px-4 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-teal-500"
+              >
+                <option value="all">Todos los Semestres ({auxiliariesList.length})</option>
+                {semestersList.map((sem) => (
+                  <option key={sem.id} value={sem.id}>
+                    {sem.code} {sem.is_current ? "★ (Actual)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {filteredAuxiliaries.length === 0 ? (
+              <AdminEmptyState
+                icon={GraduationCap}
+                title="Sin auxiliaturas registradas"
+                description="Asigna un grupo universitario a una de tus materias y configura sus carpetas de Drive."
+                actionLabel="Asignar Auxiliatura"
+                onAction={() => openAuxModal()}
+              />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filteredAuxiliaries.map((aux) => {
+                  const subName = aux.subject?.name || aux.subject_name || "Materia sin vincular";
+                  const subCode = aux.subject?.code || aux.subject_code || "INF";
+                  const imgUrl = aux.subject?.image_url || aux.image_url;
+                  const semCode = aux.semester?.code || aux.semester_code || "II-2026";
+
+                  return (
+                    <div
+                      key={aux.id}
+                      className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <InitialsAvatar src={imgUrl} name={subName} size="md" />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
+                                  {subCode}
+                                </span>
+                                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+                                  Grupo {aux.group_code}
+                                </span>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                                  {semCode}
+                                </span>
+                              </div>
+                              <h3 className="text-base font-display font-bold text-slate-900 dark:text-white mt-1 leading-snug">
+                                {subName}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => toggleAuxiliaryActive(aux)}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono transition-colors ${
+                              aux.is_active
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300"
+                                : "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            }`}
+                          >
+                            {aux.is_active ? "PÚBLICO" : "OCULTO"}
+                          </button>
+                        </div>
+
+                        {aux.description && (
+                          <p className="text-xs text-slate-600 dark:text-teal-100/70 line-clamp-2 mt-2 leading-relaxed">
+                            {aux.description}
+                          </p>
+                        )}
+
+                        {/* Enlaces de Google Drive */}
+                        <div className="mt-4 pt-3 border-t border-slate-200 dark:border-teal-900/40 space-y-1.5">
+                          <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-teal-400/80 uppercase">
+                            Carpetas en Google Drive ({aux.drive_links?.length || 0}):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {aux.drive_links?.map((link, lIdx) => (
+                              <a
+                                key={lIdx}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800/80 text-[11px] font-mono font-medium text-teal-800 dark:text-teal-300 hover:border-teal-500 transition"
+                              >
+                                <FolderOpen className="w-3 h-3 text-teal-500" />
+                                <span className="truncate max-w-[150px]">{link.title}</span>
+                                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-slate-200 dark:border-teal-900/40 flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openAuxModal(aux)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 hover:bg-slate-100 dark:hover:bg-teal-950 transition"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          onClick={() => setDeleteTarget({ type: "aux", id: aux.id, title: `${subName} (Grupo ${aux.group_code})` })}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* =========================================================== */}
+        {/* PESTAÑA 5: CATEGORÍAS (ÁREAS DE IA Y ACADÉMICAS)            */}
         {/* =========================================================== */}
         {activeTab === "categorias" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <AdminPageHeader
-              title="Categorías de Inteligencia Artificial"
-              description="Define las categorías temáticas y su orden de despliegue en la plataforma pública de recursos."
+              title="Categorías Temáticas y Académicas"
+              description="Define las áreas temáticas para clasificar tanto materias como recursos de inteligencia artificial."
               actionLabel="Nueva Categoría"
               onAction={() => openCategoryModal()}
             />
 
-            {/* Listado de Categorías */}
             {categoriesList.length === 0 ? (
               <AdminEmptyState
                 icon={Layers}
                 title="Sin categorías creadas"
-                description="Crea tu primera categoría para organizar los recursos de IA de forma estructurada."
+                description="Crea tu primera categoría para organizar las materias y los recursos de IA."
                 actionLabel="Nueva Categoría"
                 onAction={() => openCategoryModal()}
               />
@@ -852,6 +1257,7 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {categoriesList.map((cat) => {
                   const linkedCount = recommendationsList.filter((r) => r.category_id === cat.id).length;
+                  const linkedSubCount = subjectsList.filter((s) => s.category_id === cat.id).length;
                   return (
                     <div
                       key={cat.id}
@@ -869,7 +1275,7 @@ export default function AdminDashboardPage() {
                             </span>
                           </div>
                           <span className="text-[11px] font-mono px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
-                            {linkedCount} recursos
+                            {linkedCount} recursos • {linkedSubCount} materias
                           </span>
                         </div>
 
@@ -912,7 +1318,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================== */}
-        {/* PESTAÑA 4: RECURSOS Y RECOMENDACIONES (CRUD COMPLETO)       */}
+        {/* PESTAÑA 6: RECURSOS Y RECOMENDACIONES (CRUD COMPLETO)       */}
         {/* =========================================================== */}
         {activeTab === "recomendaciones" && (
           <div className="space-y-6 animate-in fade-in duration-200">
@@ -950,7 +1356,6 @@ export default function AdminDashboardPage() {
               </select>
             </div>
 
-            {/* Listado de Recursos */}
             {filteredRecommendations.length === 0 ? (
               <AdminEmptyState
                 icon={Compass}
@@ -1068,7 +1473,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================== */}
-        {/* PESTAÑA 5: REDES SOCIALES Y CONTACTO (CRUD COMPLETO)        */}
+        {/* PESTAÑA 7: REDES SOCIALES Y CONTACTO (CRUD COMPLETO)        */}
         {/* =========================================================== */}
         {activeTab === "redes" && (
           <div className="space-y-6 animate-in fade-in duration-200">
@@ -1079,7 +1484,6 @@ export default function AdminDashboardPage() {
               onAction={() => openSocialModal()}
             />
 
-            {/* Listado de Redes */}
             {socialLinksList.length === 0 ? (
               <AdminEmptyState
                 icon={Share2}
@@ -1151,12 +1555,34 @@ export default function AdminDashboardPage() {
       {/* ------------------------------------------------------------- */}
       {/* MODALES CRUD MODULARES Y REUTILIZABLES                        */}
       {/* ------------------------------------------------------------- */}
+      <SemesterModal
+        isOpen={activeModalType === "sem"}
+        mode={modalMode}
+        initialData={selectedSem}
+        onClose={() => setActiveModalType(null)}
+        onSave={handleSaveSemester}
+        nextOrder={semestersList.length + 1}
+      />
+
+      <SubjectModal
+        isOpen={activeModalType === "sub"}
+        mode={modalMode}
+        initialData={selectedSub}
+        categories={categoriesList}
+        onClose={() => setActiveModalType(null)}
+        onSave={handleSaveSubject}
+        subjectNameTestId="admin-subject-name" /* data-testid="admin-subject-name" */
+      />
+
       <AuxiliaryModal
         isOpen={activeModalType === "aux"}
         mode={modalMode}
         initialData={selectedAux}
+        subjects={subjectsList}
+        semesters={semestersList}
         onClose={() => setActiveModalType(null)}
         onSave={handleSaveAuxiliary}
+        onOpenNewSubject={() => openSubjectModal()}
         subjectNameTestId="admin-subject-name" /* data-testid="admin-subject-name" */
         saveBtnTestId="admin-save-aux-btn" /* data-testid="admin-save-aux-btn" */
       />

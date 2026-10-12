@@ -38,9 +38,15 @@ export default function AdminLoginPage() {
       });
 
       if (error) {
-        setErrorMsg(error.message === "Invalid login credentials"
-          ? "Credenciales incorrectas. Verifica tu correo y contraseña."
-          : error.message || "Error al autenticar con el servidor.");
+        if (
+          error.message === "Invalid login credentials" ||
+          error.message?.toLowerCase().includes("invalid login") ||
+          error.message?.toLowerCase().includes("invalid credentials")
+        ) {
+          setErrorMsg("Credenciales incorrectas. Verifica tu correo y contraseña.");
+        } else {
+          setErrorMsg("Problemas de Servidor. Intenta nuevamente en unos instantes.");
+        }
         setLoading(false);
         return;
       }
@@ -51,11 +57,11 @@ export default function AdminLoginPage() {
           router.replace("/admin/dashboard");
         }, 600);
       } else {
-        setErrorMsg("No se pudo iniciar la sesión. Intenta nuevamente.");
+        setErrorMsg("Problemas de Servidor. No se pudo iniciar la sesión.");
         setLoading(false);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Ocurrió un error inesperado al conectar con Supabase.");
+    } catch {
+      setErrorMsg("Problemas de Servidor. Intenta nuevamente más tarde.");
       setLoading(false);
     }
   };

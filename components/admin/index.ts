@@ -19,6 +19,12 @@ export type { AdminPageHeaderProps } from "./AdminPageHeader";
 export { default as AdminEmptyState } from "./AdminEmptyState";
 export type { AdminEmptyStateProps } from "./AdminEmptyState";
 
+export { default as SemesterModal } from "./SemesterModal";
+export type { SemesterModalProps } from "./SemesterModal";
+
+export { default as SubjectModal } from "./SubjectModal";
+export type { SubjectModalProps } from "./SubjectModal";
+
 export { default as AuxiliaryModal } from "./AuxiliaryModal";
 export type { AuxiliaryModalProps } from "./AuxiliaryModal";
 

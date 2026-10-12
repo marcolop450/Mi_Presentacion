@@ -36,18 +36,43 @@ export interface Recommendation {
 export interface DriveLinkItem {
   title: string;
   url: string;
-  type?: 'general' | 'practicas' | 'clases' | 'guias' | 'otro';
+  type?: "general" | "practicas" | "clases" | "guias" | "otro";
+}
+
+export interface Semester {
+  id: string;
+  code: string; // e.g. "II-2026"
+  name: string; // e.g. "Segundo Semestre 2026"
+  is_current: boolean;
+  display_order: number;
+  created_at?: string;
+}
+
+export interface Subject {
+  id: string;
+  name: string; // e.g. "Estructuras de Datos I"
+  code: string; // e.g. "INF-220"
+  category_id?: string;
+  image_url?: string;
+  description?: string;
+  created_at?: string;
+  category?: Category;
 }
 
 export interface Auxiliary {
   id: string;
-  subject_name: string;
-  subject_code: string; // e.g. "INF-220"
-  group_code: string;   // e.g. "SA"
-  image_url?: string;
-  semester?: string;    // e.g. "II-2026"
+  subject_id?: string;
+  semester_id?: string;
+  group_code: string; // e.g. "SA"
   description?: string;
   drive_links: DriveLinkItem[];
   is_active: boolean;
   created_at: string;
+  subject?: Subject;
+  semester?: Semester;
+  // Campos computados / retrocompatibilidad
+  subject_name?: string;
+  subject_code?: string;
+  image_url?: string;
+  semester_code?: string;
 }

@@ -30,26 +30,33 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
 
   const uniqueSubjects = useMemo(() => {
-    return Array.from(new Set(auxiliaries.map((a) => a.subject_name)));
+    return Array.from(new Set(auxiliaries.map((a) => a.subject?.name || a.subject_name).filter(Boolean))) as string[];
   }, [auxiliaries]);
 
   const uniqueGroups = useMemo(() => {
-    return Array.from(new Set(auxiliaries.map((a) => a.group_code)));
+    return Array.from(new Set(auxiliaries.map((a) => a.group_code).filter(Boolean)));
   }, [auxiliaries]);
 
   const filteredAuxiliaries = useMemo(() => {
     return auxiliaries.filter((item) => {
+      const subName = item.subject?.name || item.subject_name || "";
+      const subCode = item.subject?.code || item.subject_code || "";
+      const grpCode = item.group_code || "";
+      const desc = item.description || item.subject?.description || "";
+      const semCode = item.semester?.code || (typeof item.semester === "string" ? item.semester : "") || item.semester_code || "";
+
       const matchSearch =
-        item.subject_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.subject_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.group_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        subName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        subCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grpCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        semCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        desc.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchSubject =
-        selectedSubject === "all" || item.subject_name === selectedSubject;
+        selectedSubject === "all" || subName === selectedSubject;
 
       const matchGroup =
-        selectedGroup === "all" || item.group_code === selectedGroup;
+        selectedGroup === "all" || grpCode === selectedGroup;
 
       return matchSearch && matchSubject && matchGroup;
     });
@@ -210,30 +217,52 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                   >
                     <div>
                       {/* Cabecera de la Tarjeta con Avatar y Badges */}
-                      <div className="flex items-start justify-between gap-3 mb-3.5">
-                        <div className="flex items-center gap-3">
-                          <InitialsAvatar src={aux.image_url} name={aux.subject_name} size="md" />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-100 text-teal-900 dark:bg-teal-950/90 dark:text-teal-300 border border-slate-300 dark:border-teal-800/80">
-                                {aux.subject_code}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-                                Grupo {aux.group_code}
-                              </span>
+                      {(() => {
+                        const subName = aux.subject?.name || aux.subject_name || "Materia";
+                        const subCode = aux.subject?.code || aux.subject_code || "INF";
+                        const imgUrl = aux.subject?.image_url || aux.image_url;
+                        const semCode = aux.semester?.code || (typeof aux.semester === "string" ? aux.semester : "") || aux.semester_code || "";
+                        const cat = aux.subject?.category;
+
+                        return (
+                          <div className="flex items-start justify-between gap-3 mb-3.5">
+                            <div className="flex items-center gap-3">
+                              <InitialsAvatar src={imgUrl} name={subName} size="md" />
+                              <div>
+                                <div className="flex items-center flex-wrap gap-2">
+                                  <span className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-100 text-teal-900 dark:bg-teal-950/90 dark:text-teal-300 border border-slate-300 dark:border-teal-800/80">
+                                    {subCode}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                    Grupo {aux.group_code}
+                                  </span>
+                                  {cat && (
+                                    <span
+                                      className="text-[10px] font-mono px-2 py-0.5 rounded-md border"
+                                      style={{
+                                        backgroundColor: `${cat.color || "#0d9488"}20`,
+                                        borderColor: `${cat.color || "#0d9488"}50`,
+                                        color: cat.color || "#0d9488",
+                                      }}
+                                    >
+                                      {cat.name}
+                                    </span>
+                                  )}
+                                </div>
+                                <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight mt-1">
+                                  {subName}
+                                </h3>
+                              </div>
                             </div>
-                            <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight mt-1">
-                              {aux.subject_name}
-                            </h3>
+                            {semCode && (
+                              <span className="text-xs font-mono text-slate-500 dark:text-teal-300/70 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/70 border border-slate-200 dark:border-transparent dark:bg-teal-950/40 shrink-0">
+                                <Calendar className="w-3.5 h-3.5 text-teal-500" />
+                                {semCode}
+                              </span>
+                            )}
                           </div>
-                        </div>
-                        {aux.semester && (
-                          <span className="text-xs font-mono text-slate-500 dark:text-teal-300/70 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/70 border border-slate-200 dark:border-transparent dark:bg-teal-950/40 shrink-0">
-                            <Calendar className="w-3.5 h-3.5 text-teal-500" />
-                            {aux.semester}
-                          </span>
-                        )}
-                      </div>
+                        );
+                      })()}
 
                       {/* Descripción */}
                       {aux.description && (

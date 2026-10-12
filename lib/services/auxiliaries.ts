@@ -9,9 +9,9 @@ export async function getAuxiliaries(): Promise<Auxiliary[]> {
 
     const { data, error } = await supabase
       .from("auxiliaries")
-      .select("*")
+      .select("*, subject:subjects(*, category:categories(*)), semester:semesters(*)")
       .eq("is_active", true)
-      .order("subject_name", { ascending: true });
+      .order("created_at", { ascending: false });
 
     if (error || !data || data.length === 0) {
       return defaultAuxiliaries;
