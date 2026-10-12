@@ -19,6 +19,7 @@ import {
   RecommendationModal,
   CategoryModal,
   AdminPagination,
+  AdminPageSkeleton,
 } from "@/components/admin";
 import InitialsAvatar from "@/components/InitialsAvatar";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -27,6 +28,7 @@ export default function RecommendationsAdminPage() {
   const {
     recommendationsList,
     categoriesList,
+    isLoading,
     loadAllData,
     showToast,
   } = useAdmin();
@@ -138,6 +140,10 @@ export default function RecommendationsAdminPage() {
     }
     setDeleteTarget(null);
   };
+
+  if (isLoading) {
+    return <AdminPageSkeleton cardCount={6} hasFilter={true} />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

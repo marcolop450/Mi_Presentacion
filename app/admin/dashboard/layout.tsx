@@ -38,6 +38,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     categoriesList,
     recommendationsList,
     socialLinksList,
+    isLoading,
   } = useAdmin();
 
   // Bloqueo de scroll cuando el menú móvil está abierto
@@ -260,7 +261,15 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
               {adminEmail}
             </span>
           </div>
-          <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+          {isLoading ? (
+            <span title="Sincronizando datos con Supabase..." className="shrink-0 flex items-center">
+              <Loader2 className="w-4 h-4 text-teal-500 animate-spin" />
+            </span>
+          ) : (
+            <span title="Conexión segura activa" className="shrink-0 flex items-center">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            </span>
+          )}
         </div>
 
         {/* Menú de Navegación Organizado por Jerarquía - CON SCROLL INDEPENDIENTE PARA PANTALLAS CORTAS */}

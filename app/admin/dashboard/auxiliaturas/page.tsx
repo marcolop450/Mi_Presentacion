@@ -20,6 +20,7 @@ import {
   AuxiliaryModal,
   SubjectModal,
   AdminPagination,
+  AdminPageSkeleton,
 } from "@/components/admin";
 import InitialsAvatar from "@/components/InitialsAvatar";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -29,6 +30,7 @@ export default function AuxiliariesAdminPage() {
     auxiliariesList,
     subjectsList,
     semestersList,
+    isLoading,
     loadAllData,
     showToast,
   } = useAdmin();
@@ -149,6 +151,10 @@ export default function AuxiliariesAdminPage() {
     }
     setDeleteTarget(null);
   };
+
+  if (isLoading) {
+    return <AdminPageSkeleton cardCount={6} hasFilter={true} />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

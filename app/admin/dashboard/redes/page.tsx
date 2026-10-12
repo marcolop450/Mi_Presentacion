@@ -10,11 +10,12 @@ import {
   AdminEmptyState,
   SocialModal,
   AdminPagination,
+  AdminPageSkeleton,
 } from "@/components/admin";
 import ConfirmModal from "@/components/ConfirmModal";
 
 export default function SocialLinksAdminPage() {
-  const { socialLinksList, loadAllData, showToast } = useAdmin();
+  const { socialLinksList, isLoading, loadAllData, showToast } = useAdmin();
   const [currentPage, setCurrentPage] = useState(1);
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -117,6 +118,10 @@ export default function SocialLinksAdminPage() {
     }
     setDeleteTarget(null);
   };
+
+  if (isLoading) {
+    return <AdminPageSkeleton cardCount={6} hasFilter={false} />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

@@ -42,3 +42,11 @@ export type { PaginationProps } from "./AdminPagination";
 
 export { AdminProvider, useAdmin, ITEMS_PER_PAGE } from "./AdminContext";
 
+export {
+  AdminCardSkeleton,
+  AdminStatCardSkeleton,
+  AdminPageSkeleton,
+  AdminOverviewSkeleton,
+} from "./AdminSkeleton";
+
+

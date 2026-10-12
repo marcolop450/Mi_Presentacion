@@ -23,7 +23,7 @@ export default function AdminStatCard({
     <button
       type="button"
       onClick={onClick}
-      className="p-5 sm:p-6 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-700/60 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between group hover:scale-[1.01] w-full"
+      className="p-5 sm:p-6 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-700/60 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between group hover:scale-[1.01] w-full cursor-pointer"
     >
       <div className="flex items-center justify-between mb-4 w-full">
         <span className="text-xs font-bold text-slate-600 dark:text-teal-200/80">

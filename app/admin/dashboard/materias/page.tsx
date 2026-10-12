@@ -10,12 +10,13 @@ import {
   AdminEmptyState,
   SubjectModal,
   AdminPagination,
+  AdminPageSkeleton,
 } from "@/components/admin";
 import InitialsAvatar from "@/components/InitialsAvatar";
 import ConfirmModal from "@/components/ConfirmModal";
 
 export default function SubjectsAdminPage() {
-  const { subjectsList, auxiliariesList, loadAllData, showToast } = useAdmin();
+  const { subjectsList, auxiliariesList, isLoading, loadAllData, showToast } = useAdmin();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
@@ -94,6 +95,10 @@ export default function SubjectsAdminPage() {
     }
     setDeleteTarget(null);
   };
+
+  if (isLoading) {
+    return <AdminPageSkeleton cardCount={6} hasFilter={true} />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

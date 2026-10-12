@@ -20,6 +20,7 @@ import {
   AdminStatCard,
   SubjectModal,
   AuxiliaryModal,
+  AdminOverviewSkeleton,
 } from "@/components/admin";
 import ConfirmModal from "@/components/ConfirmModal";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +34,7 @@ export default function AdminDashboardOverviewPage() {
     categoriesList,
     recommendationsList,
     socialLinksList,
+    isLoading,
     loadAllData,
     showToast,
   } = useAdmin();
@@ -54,6 +56,14 @@ export default function AdminDashboardOverviewPage() {
   };
 
   const currentSemester = semestersList.find((s) => s.is_current);
+
+  if (isLoading) {
+    return (
+      <div data-testid="admin-tab-resumen">
+        <AdminOverviewSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-7 animate-in fade-in duration-200" data-testid="admin-tab-resumen">
