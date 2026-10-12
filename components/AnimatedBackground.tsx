@@ -36,6 +36,17 @@ interface Spore {
   alpha: number;
 }
 
+interface FrostMote {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  alpha: number;
+  swirlSpeed: number;
+  swirlOffset: number;
+}
+
 interface Star {
   x: number;
   y: number;
@@ -43,7 +54,7 @@ interface Star {
   alpha: number;
   twinkleSpeed: number;
   phase: number;
-  isGlint: boolean; // Estrella con destello de 4 puntas
+  isGlint: boolean;
 }
 
 interface ShootingStar {
@@ -63,6 +74,7 @@ interface WinterCloud {
   height: number;
   speed: number;
   alpha: number;
+  wispOffset: number;
 }
 
 interface IceCrystal {
@@ -72,6 +84,14 @@ interface IceCrystal {
   glintPhase: number;
   glintSpeed: number;
   vy: number;
+}
+
+interface WinterBird {
+  x: number;
+  y: number;
+  speed: number;
+  wingPhase: number;
+  size: number;
 }
 
 interface PineTree {
@@ -131,15 +151,17 @@ export default function AnimatedBackground() {
     };
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
 
-    // Entidades
+    // Colecciones de entidades
     let fireflies: Firefly[] = [];
     let spores: Spore[] = [];
+    let frostMotes: FrostMote[] = [];
     let snowflakes: Snowflake[] = [];
     let stars: Star[] = [];
     let shootingStar: ShootingStar = { x: 0, y: 0, length: 0, speed: 0, angle: 0, alpha: 0, active: false };
     let shootingStarTimer = 0;
     let winterClouds: WinterCloud[] = [];
     let iceCrystals: IceCrystal[] = [];
+    let winterBirds: WinterBird[] = [];
     let distantTrees: PineTree[] = [];
     let midTrees: PineTree[] = [];
     let nearTrees: PineTree[] = [];
@@ -157,10 +179,12 @@ export default function AnimatedBackground() {
     const initEntities = () => {
       fireflies = [];
       spores = [];
+      frostMotes = [];
       snowflakes = [];
       stars = [];
       winterClouds = [];
       iceCrystals = [];
+      winterBirds = [];
       distantTrees = [];
       midTrees = [];
       nearTrees = [];
@@ -186,21 +210,20 @@ export default function AnimatedBackground() {
         nearTrees.push(createPine(i * 88 + (Math.random() - 0.5) * 30, forestBaseHeight, 0.58));
       }
 
-      // Faroles rústicos colocados en claros del bosque
+      // Faroles rústicos ubicados estratégicamente para verse en el frente
       const lanternPositions = [0.18, 0.52, 0.84];
       for (const ratio of lanternPositions) {
         lanterns.push({
-          x: width * ratio + (Math.random() - 0.5) * 40,
+          x: width * ratio + (Math.random() - 0.5) * 30,
           baseY: height + 4,
-          height: 80 + Math.random() * 15,
-          glowRadius: 90 + Math.random() * 20,
+          height: 82 + Math.random() * 14,
+          glowRadius: 95 + Math.random() * 20,
           flickerOffset: Math.random() * Math.PI * 2,
         });
       }
 
       if (isDark) {
         // --- NOCHE / BOSQUE VIVO ---
-        // Estrellas y constelaciones con destello
         const starCount = Math.min(75, Math.floor(width / 20));
         for (let i = 0; i < starCount; i++) {
           stars.push({
@@ -210,11 +233,10 @@ export default function AnimatedBackground() {
             alpha: Math.random() * 0.7 + 0.3,
             twinkleSpeed: Math.random() * 0.03 + 0.015,
             phase: Math.random() * Math.PI * 2,
-            isGlint: Math.random() > 0.82, // 18% son estrellas con destello de 4 puntas
+            isGlint: Math.random() > 0.82,
           });
         }
 
-        // Luciérnagas en 3 planos
         const fireflyCount = Math.min(50, Math.floor((width * height) / 25000) + 20);
         for (let i = 0; i < fireflyCount; i++) {
           const depth = Math.random() > 0.8 ? 2 : Math.random() > 0.35 ? 1 : 0;
@@ -231,7 +253,6 @@ export default function AnimatedBackground() {
           });
         }
 
-        // Esporas
         const sporeCount = Math.min(35, Math.floor(width / 38));
         for (let i = 0; i < sporeCount; i++) {
           spores.push({
@@ -245,47 +266,71 @@ export default function AnimatedBackground() {
         }
       } else {
         // --- DÍA / BOSQUE EN INVIERNO ---
-        // Nubes nórdicas flotantes en el cielo invernal
+        // Nubes nórdicas realistas alargadas y estratificadas
         const cloudCount = 4;
         for (let i = 0; i < cloudCount; i++) {
           winterClouds.push({
-            x: (width / cloudCount) * i + Math.random() * 100,
-            y: 40 + Math.random() * 90,
-            width: 180 + Math.random() * 140,
-            height: 45 + Math.random() * 30,
-            speed: 0.12 + Math.random() * 0.1,
-            alpha: 0.25 + Math.random() * 0.2,
+            x: (width / cloudCount) * i + Math.random() * 80,
+            y: 35 + i * 28 + Math.random() * 20,
+            width: 260 + Math.random() * 160,
+            height: 26 + Math.random() * 14,
+            speed: 0.12 + Math.random() * 0.08,
+            alpha: 0.28 + Math.random() * 0.18,
+            wispOffset: Math.random() * Math.PI * 2,
           });
         }
 
-        // Cristales de hielo (Diamond Dust) en el cielo
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 40; i++) {
           iceCrystals.push({
             x: Math.random() * width,
-            y: Math.random() * (height * 0.65),
-            size: Math.random() * 1.8 + 0.8,
+            y: Math.random() * (height * 0.75),
+            size: Math.random() * 2.2 + 0.9,
             glintPhase: Math.random() * Math.PI * 2,
             glintSpeed: Math.random() * 0.04 + 0.02,
-            vy: Math.random() * 0.3 + 0.1,
+            vy: Math.random() * 0.35 + 0.15,
           });
         }
 
-        // Copos de nieve con paralaje
-        const snowCount = Math.min(80, Math.floor((width * height) / 15000) + 25);
+        const moteCount = Math.min(45, Math.floor(width / 30));
+        for (let i = 0; i < moteCount; i++) {
+          frostMotes.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.35,
+            vy: -(Math.random() * 0.4 + 0.18),
+            radius: Math.random() * 1.8 + 0.8,
+            alpha: Math.random() * 0.5 + 0.25,
+            swirlSpeed: Math.random() * 0.03 + 0.015,
+            swirlOffset: Math.random() * Math.PI * 2,
+          });
+        }
+
+        const snowCount = Math.min(115, Math.floor((width * height) / 12000) + 35);
         for (let i = 0; i < snowCount; i++) {
-          const depth = Math.random() > 0.8 ? 2 : Math.random() > 0.4 ? 1 : 0;
+          const depth = Math.random() > 0.78 ? 2 : Math.random() > 0.38 ? 1 : 0;
           snowflakes.push({
             x: Math.random() * width,
             y: Math.random() * height,
-            radius: depth === 2 ? Math.random() * 2.8 + 2.0 : depth === 1 ? Math.random() * 1.8 + 1.0 : Math.random() * 1.0 + 0.5,
-            vy: depth === 2 ? Math.random() * 1.2 + 0.9 : depth === 1 ? Math.random() * 0.8 + 0.5 : Math.random() * 0.5 + 0.3,
-            swaySpeed: Math.random() * 0.02 + 0.01,
-            swayAmp: depth === 2 ? 2.2 : 1.4,
+            radius: depth === 2 ? Math.random() * 3.4 + 2.2 : depth === 1 ? Math.random() * 2.0 + 1.2 : Math.random() * 1.2 + 0.6,
+            vy: depth === 2 ? Math.random() * 1.4 + 1.0 : depth === 1 ? Math.random() * 0.9 + 0.6 : Math.random() * 0.55 + 0.35,
+            swaySpeed: Math.random() * 0.025 + 0.012,
+            swayAmp: depth === 2 ? 2.8 : 1.6,
             swayOffset: Math.random() * Math.PI * 2,
-            alpha: depth === 2 ? 0.85 : depth === 1 ? 0.6 : 0.35,
+            alpha: depth === 2 ? 0.92 : depth === 1 ? 0.7 : 0.42,
             depth,
           });
         }
+
+        const birdBaseX = width * 0.15;
+        const birdBaseY = 95;
+        winterBirds = [
+          { x: birdBaseX, y: birdBaseY, speed: 0.42, wingPhase: 0, size: 4 },
+          { x: birdBaseX - 16, y: birdBaseY + 8, speed: 0.42, wingPhase: 0.5, size: 3.5 },
+          { x: birdBaseX - 32, y: birdBaseY + 16, speed: 0.42, wingPhase: 1.0, size: 3.2 },
+          { x: birdBaseX + 16, y: birdBaseY + 9, speed: 0.42, wingPhase: 0.7, size: 3.6 },
+          { x: birdBaseX + 32, y: birdBaseY + 18, speed: 0.42, wingPhase: 1.2, size: 3.2 },
+          { x: birdBaseX + 48, y: birdBaseY + 27, speed: 0.42, wingPhase: 1.8, size: 3.0 },
+        ];
       }
     };
 
@@ -294,7 +339,7 @@ export default function AnimatedBackground() {
     let animId: number;
     let clock = 0;
 
-    // Dibuja un pino orgánico con contrastes nítidos y ribetes luminosos
+    // Dibuja pino orgánico
     const drawOrganicPine = (
       tree: PineTree,
       baseY: number,
@@ -316,7 +361,6 @@ export default function AnimatedBackground() {
       const tiers = tree.tiers;
       const tierH = tree.height / tiers;
 
-      // Lado derecho
       for (let t = 1; t <= tiers; t++) {
         const tierProgress = t / tiers;
         const currentW = halfW * tierProgress;
@@ -339,7 +383,6 @@ export default function AnimatedBackground() {
       ctx.lineTo(tree.x + 3, baseY);
       ctx.lineTo(tree.x - 3, baseY);
 
-      // Lado izquierdo
       for (let t = tiers; t >= 1; t--) {
         const tierProgress = t / tiers;
         const currentW = halfW * tierProgress;
@@ -362,16 +405,14 @@ export default function AnimatedBackground() {
       ctx.closePath();
       ctx.fill();
 
-      // Ribete bioluminiscente en modo oscuro (hace que el bosque sea visible y resalte en la noche)
       if (rimColor) {
         ctx.strokeStyle = rimColor;
         ctx.lineWidth = 1.2;
         ctx.stroke();
       }
 
-      // Nieve acumulada en ramas en invierno
       if (snowCover) {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
         ctx.beginPath();
         ctx.arc(topX, topY + 3, 3.5, 0, Math.PI * 2);
         for (let t = 1; t <= tiers; t++) {
@@ -390,8 +431,8 @@ export default function AnimatedBackground() {
       ctx.restore();
     };
 
-    // Dibuja un farol rústico de madera/hierro con vela cálida y resplandor
-    const drawRusticLantern = (l: Lantern, isWinter: boolean) => {
+    // Dibuja el farol rústico (encendido de noche, apagado de día)
+    const drawRusticLantern = (l: Lantern, isWinterDay: boolean) => {
       const postX = l.x;
       const postTopY = l.baseY - l.height;
       const lanternX = postX + 14;
@@ -399,111 +440,153 @@ export default function AnimatedBackground() {
 
       ctx.save();
 
-      // 1. Cono de luz cálida proyectada en el suelo
-      const flicker = (Math.sin(clock * 10 + l.flickerOffset) + 1) * 0.08 + 0.92;
-      const glowR = l.glowRadius * flicker;
-      const lightPool = ctx.createRadialGradient(
-        lanternX, lanternY, 0,
-        lanternX, lanternY, glowR
-      );
-      lightPool.addColorStop(0, "rgba(251, 191, 36, 0.45)"); // Ámbar dorado cálido
-      lightPool.addColorStop(0.35, "rgba(245, 158, 11, 0.18)");
-      lightPool.addColorStop(0.7, "rgba(217, 119, 6, 0.06)");
-      lightPool.addColorStop(1, "transparent");
+      if (!isWinterDay) {
+        // DE NOCHE: FAROL ENCENDIDO CON LUZ ÁMBAR
+        const flicker = (Math.sin(clock * 10 + l.flickerOffset) + 1) * 0.08 + 0.92;
+        const glowR = l.glowRadius * flicker;
 
-      ctx.fillStyle = lightPool;
-      ctx.beginPath();
-      ctx.arc(lanternX, lanternY, glowR, 0, Math.PI * 2);
-      ctx.fill();
+        const lightPool = ctx.createRadialGradient(
+          lanternX, lanternY, 0,
+          lanternX, lanternY, glowR
+        );
+        lightPool.addColorStop(0, "rgba(251, 191, 36, 0.48)");
+        lightPool.addColorStop(0.35, "rgba(245, 158, 11, 0.20)");
+        lightPool.addColorStop(0.7, "rgba(217, 119, 6, 0.06)");
+        lightPool.addColorStop(1, "transparent");
 
-      // 2. Poste de madera/hierro
-      ctx.strokeStyle = isWinter ? "#334155" : "#0f2f27";
+        ctx.fillStyle = lightPool;
+        ctx.beginPath();
+        ctx.arc(lanternX, lanternY, glowR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Poste de madera / hierro forjado
+      ctx.strokeStyle = isWinterDay ? "#475569" : "#0f2f27";
       ctx.lineWidth = 3.5;
       ctx.beginPath();
       ctx.moveTo(postX, l.baseY);
       ctx.lineTo(postX, postTopY);
-      // Brazo curvo para colgar el farol
       ctx.quadraticCurveTo(postX + 4, postTopY - 6, lanternX, postTopY);
       ctx.stroke();
 
-      // 3. Cadena o gancho
-      ctx.strokeStyle = isWinter ? "#64748b" : "#134e40";
+      // Cadena/gancho
+      ctx.strokeStyle = isWinterDay ? "#64748b" : "#134e40";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(lanternX, postTopY);
       ctx.lineTo(lanternX, lanternY - 10);
       ctx.stroke();
 
-      // 4. Carcasa del farol
-      ctx.fillStyle = isWinter ? "#1e293b" : "#06221c";
+      // Carcasa del farol
+      ctx.fillStyle = isWinterDay ? "#1e293b" : "#06221c";
       ctx.beginPath();
-      // Techo del farol (pirámide)
       ctx.moveTo(lanternX - 7, lanternY - 8);
       ctx.lineTo(lanternX, lanternY - 14);
       ctx.lineTo(lanternX + 7, lanternY - 8);
       ctx.closePath();
       ctx.fill();
 
-      // Capa de nieve en el techo del farol en invierno
-      if (isWinter) {
+      // Nieve acumulada en el tejadillo
+      if (isWinterDay) {
         ctx.fillStyle = "#ffffff";
         ctx.beginPath();
-        ctx.ellipse(lanternX, lanternY - 12, 6, 2.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(lanternX, lanternY - 12, 7, 3, 0, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Vidrio con llama brillante
-      ctx.fillStyle = "rgba(254, 240, 138, 0.95)"; // Núcleo de llama dorada
-      ctx.beginPath();
-      ctx.arc(lanternX, lanternY - 2, 3.5 * flicker, 0, Math.PI * 2);
-      ctx.fill();
+      if (!isWinterDay) {
+        // Llama encendida en la noche
+        const flicker = (Math.sin(clock * 10 + l.flickerOffset) + 1) * 0.08 + 0.92;
+        ctx.fillStyle = "rgba(254, 240, 138, 0.95)";
+        ctx.beginPath();
+        ctx.arc(lanternX, lanternY - 2, 3.5 * flicker, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // APAGADO EN EL DÍA: Vela de cera fría con mecha y reflejo de cristal
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(lanternX - 2, lanternY - 1, 4, 6);
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(lanternX - 0.5, lanternY - 3.5, 1, 2.5);
 
-      // Marco de cristal del farol
-      ctx.strokeStyle = isWinter ? "#475569" : "#0d3b31";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+        ctx.beginPath();
+        ctx.moveTo(lanternX - 4, lanternY - 6);
+        ctx.lineTo(lanternX - 1, lanternY - 6);
+        ctx.lineTo(lanternX - 4, lanternY + 3);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = isWinterDay ? "#64748b" : "#0d3b31";
       ctx.lineWidth = 1.2;
       ctx.strokeRect(lanternX - 6, lanternY - 8, 12, 12);
 
       ctx.restore();
     };
 
-    // Dibuja la Luna mística en modo oscuro con halos etéreos
-    const drawMoon = () => {
+    // Dibuja la Luna Realista (orgánica, con mares lunares y bruma nocturna en lugar de un círculo perfecto)
+    const drawRealisticMoon = () => {
       const moonX = width * 0.84;
       const moonY = 80;
-      const moonRadius = 26;
+      const radiusX = 27;
+      const radiusY = 25.5; // Ligera elipticidad astronómica
 
       ctx.save();
 
-      // Aura exterior lunar
+      // 1. Aura lunar difusa
       const moonGlow = ctx.createRadialGradient(
-        moonX, moonY, moonRadius * 0.5,
-        moonX, moonY, moonRadius * 4.5
+        moonX, moonY, radiusX * 0.4,
+        moonX, moonY, radiusX * 4.6
       );
-      moonGlow.addColorStop(0, "rgba(204, 251, 241, 0.28)");
-      moonGlow.addColorStop(0.4, "rgba(52, 211, 153, 0.10)");
+      moonGlow.addColorStop(0, "rgba(204, 251, 241, 0.32)");
+      moonGlow.addColorStop(0.35, "rgba(52, 211, 153, 0.12)");
       moonGlow.addColorStop(1, "transparent");
 
       ctx.fillStyle = moonGlow;
       ctx.beginPath();
-      ctx.arc(moonX, moonY, moonRadius * 4.5, 0, Math.PI * 2);
+      ctx.ellipse(moonX, moonY, radiusX * 4.6, radiusY * 4.6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Disco lunar (Luna Creciente Plateada)
+      // 2. Brillo de la Tierra (Earthshine) - Disco lunar no iluminado tenuemente visible
+      ctx.fillStyle = "rgba(7, 35, 30, 0.45)";
+      ctx.beginPath();
+      ctx.ellipse(moonX, moonY, radiusX, radiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. Luna Creciente Iluminada con terminador orgánico
       ctx.fillStyle = "#f0fdfa";
       ctx.beginPath();
-      ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+      // Borde exterior curvo
+      ctx.ellipse(moonX, moonY, radiusX, radiusY, 0, -Math.PI * 0.48, Math.PI * 0.52);
+      // Terminador orgánico interior (curva no puramente circular con relieve lunar)
+      ctx.quadraticCurveTo(
+        moonX - radiusX * 0.3,
+        moonY,
+        moonX + radiusX * 0.1,
+        moonY - radiusY * 0.95
+      );
+      ctx.closePath();
       ctx.fill();
 
-      // Sombra para dar fase creciente elegante
-      ctx.fillStyle = "#061317";
+      // 4. Mares lunares sutiles (manchas orgánicas tenues sobre el relieve)
+      ctx.fillStyle = "rgba(167, 243, 208, 0.22)";
       ctx.beginPath();
-      ctx.arc(moonX - 8, moonY - 3, moonRadius * 0.88, 0, Math.PI * 2);
+      ctx.ellipse(moonX + 11, moonY - 5, 4, 3, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(moonX + 14, moonY + 7, 5, 3.5, -0.2, 0, Math.PI * 2);
       ctx.fill();
+
+      // 5. Filamento de bruma nocturna cruzando la luna
+      ctx.strokeStyle = "rgba(6, 40, 32, 0.35)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(moonX - 35, moonY + 4);
+      ctx.quadraticCurveTo(moonX, moonY - 3, moonX + 35, moonY + 2);
+      ctx.stroke();
 
       ctx.restore();
     };
 
-    // Dibuja la Aurora Boreal en la noche
+    // Dibuja la Aurora Boreal
     const drawAurora = () => {
       const auroraGrad = ctx.createLinearGradient(0, 0, 0, 200);
       auroraGrad.addColorStop(0, "transparent");
@@ -528,49 +611,140 @@ export default function AnimatedBackground() {
       ctx.restore();
     };
 
-    // Dibuja el Sol de Invierno y nubes en modo claro
-    const drawWinterSunAndClouds = () => {
-      const sunX = width * 0.82;
-      const sunY = 85;
-      const sunRadius = 28;
+    // Dibuja una nube invernal realista y orgánica (estratificada, con colas rasgadas de viento)
+    const drawOrganicWinterCloud = (cloud: WinterCloud) => {
+      const cx = cloud.x;
+      const cy = cloud.y;
+      const w = cloud.width;
+      const h = cloud.height;
 
       ctx.save();
 
-      // Halo solar gélido
-      const sunHalo = ctx.createRadialGradient(
-        sunX, sunY, sunRadius * 0.4,
-        sunX, sunY, sunRadius * 4.2
-      );
-      sunHalo.addColorStop(0, "rgba(254, 243, 199, 0.45)");
-      sunHalo.addColorStop(0.4, "rgba(204, 251, 241, 0.18)");
-      sunHalo.addColorStop(1, "transparent");
+      // Gradiente horizontal que difumina los bordes izquierdo y derecho sin cortes circulares
+      const grad = ctx.createLinearGradient(cx - w * 0.5, cy, cx + w * 0.5, cy);
+      grad.addColorStop(0, "transparent");
+      grad.addColorStop(0.18, `rgba(255, 255, 255, ${(cloud.alpha * 0.65).toFixed(2)})`);
+      grad.addColorStop(0.5, `rgba(255, 255, 255, ${cloud.alpha.toFixed(2)})`);
+      grad.addColorStop(0.82, `rgba(255, 255, 255, ${(cloud.alpha * 0.65).toFixed(2)})`);
+      grad.addColorStop(1, "transparent");
 
-      ctx.fillStyle = sunHalo;
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(sunX, sunY, sunRadius * 4.2, 0, Math.PI * 2);
+
+      // Extremo izquierdo afilado por el viento
+      ctx.moveTo(cx - w * 0.5, cy + h * 0.1);
+
+      // Borde superior ondulado orgánico (curvas de estratocúmulo horizontal)
+      ctx.quadraticCurveTo(cx - w * 0.35, cy - h * 0.6, cx - w * 0.2, cy - h * 0.4);
+      ctx.bezierCurveTo(cx - w * 0.05, cy - h * 0.9, cx + w * 0.15, cy - h * 0.8, cx + w * 0.3, cy - h * 0.3);
+      ctx.quadraticCurveTo(cx + w * 0.42, cy - h * 0.1, cx + w * 0.5, cy);
+
+      // Borde inferior alargado y plano con suaves ondas
+      ctx.quadraticCurveTo(cx + w * 0.25, cy + h * 0.45, cx, cy + h * 0.3);
+      ctx.quadraticCurveTo(cx - w * 0.25, cy + h * 0.4, cx - w * 0.5, cy + h * 0.1);
+
+      ctx.closePath();
       ctx.fill();
 
-      // Disco del sol
-      ctx.fillStyle = "rgba(255, 253, 240, 0.95)";
+      // Filamento secundario rasgado por el viento
+      ctx.fillStyle = `rgba(240, 253, 250, ${(cloud.alpha * 0.4).toFixed(2)})`;
       ctx.beginPath();
-      ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
+      ctx.moveTo(cx - w * 0.3, cy + h * 0.5);
+      ctx.quadraticCurveTo(cx, cy + h * 0.7, cx + w * 0.25, cy + h * 0.45);
+      ctx.quadraticCurveTo(cx, cy + h * 0.55, cx - w * 0.3, cy + h * 0.5);
+      ctx.closePath();
       ctx.fill();
 
-      // Nubes invernales flotantes
-      for (const cloud of winterClouds) {
-        cloud.x += cloud.speed;
-        if (cloud.x > width + cloud.width) {
-          cloud.x = -cloud.width;
-          cloud.y = 40 + Math.random() * 90;
-        }
+      ctx.restore();
+    };
 
-        ctx.fillStyle = `rgba(255, 255, 255, ${cloud.alpha.toFixed(2)})`;
+    // Dibuja el Sol de Invierno Realista (aplanado por refracción atmosférica, con rayos y velo de nubes)
+    const drawRealisticWinterSun = () => {
+      const sunX = width * 0.82;
+      const sunY = 90;
+      // Elipticidad atmosférica invernal (el sol en el horizonte es más ancho que alto)
+      const sunRadiusX = 36;
+      const sunRadiusY = 29;
+
+      ctx.save();
+
+      // 1. Rayos crepusculares suaves proyectados a través del aire frío
+      const numRays = 5;
+      for (let i = 0; i < numRays; i++) {
+        const rayAngle = Math.PI * 0.35 + (i * 0.18) + Math.sin(clock * 0.2 + i) * 0.03;
+        const rayLen = height * 0.85;
+        const rayTargetX = sunX + Math.cos(rayAngle) * rayLen;
+        const rayTargetY = sunY + Math.sin(rayAngle) * rayLen;
+
+        const rayGrad = ctx.createLinearGradient(sunX, sunY, rayTargetX, rayTargetY);
+        rayGrad.addColorStop(0, "rgba(254, 243, 199, 0.18)");
+        rayGrad.addColorStop(0.4, "rgba(224, 242, 254, 0.08)");
+        rayGrad.addColorStop(1, "transparent");
+
+        ctx.fillStyle = rayGrad;
         ctx.beginPath();
-        ctx.ellipse(cloud.x, cloud.y, cloud.width * 0.5, cloud.height * 0.4, 0, 0, Math.PI * 2);
-        ctx.ellipse(cloud.x + cloud.width * 0.2, cloud.y - 8, cloud.width * 0.35, cloud.height * 0.5, 0, 0, Math.PI * 2);
-        ctx.ellipse(cloud.x - cloud.width * 0.2, cloud.y + 4, cloud.width * 0.3, cloud.height * 0.35, 0, 0, Math.PI * 2);
+        ctx.moveTo(sunX, sunY);
+        ctx.lineTo(rayTargetX - 60, rayTargetY);
+        ctx.lineTo(rayTargetX + 60, rayTargetY);
+        ctx.closePath();
         ctx.fill();
       }
+
+      // 2. Halo óptico de 22° y parhelios (sundogs)
+      const haloRadiusX = 92;
+      const haloRadiusY = 82;
+      ctx.strokeStyle = "rgba(254, 243, 199, 0.24)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(sunX, sunY, haloRadiusX, haloRadiusY, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Parhelios laterales difusos
+      const sundogL = ctx.createRadialGradient(sunX - haloRadiusX, sunY, 0, sunX - haloRadiusX, sunY, 18);
+      sundogL.addColorStop(0, "rgba(254, 240, 138, 0.38)");
+      sundogL.addColorStop(1, "transparent");
+      ctx.fillStyle = sundogL;
+      ctx.beginPath();
+      ctx.arc(sunX - haloRadiusX, sunY, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      const sundogR = ctx.createRadialGradient(sunX + haloRadiusX, sunY, 0, sunX + haloRadiusX, sunY, 18);
+      sundogR.addColorStop(0, "rgba(254, 240, 138, 0.38)");
+      sundogR.addColorStop(1, "transparent");
+      ctx.fillStyle = sundogR;
+      ctx.beginPath();
+      ctx.arc(sunX + haloRadiusX, sunY, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. Resplandor atmosférico difuso del sol (sin borde circular duro)
+      const sunAtmosphere = ctx.createRadialGradient(
+        sunX, sunY, sunRadiusY * 0.3,
+        sunX, sunY, sunRadiusX * 3.8
+      );
+      sunAtmosphere.addColorStop(0, "rgba(255, 254, 240, 0.95)");
+      sunAtmosphere.addColorStop(0.3, "rgba(254, 243, 199, 0.55)");
+      sunAtmosphere.addColorStop(0.65, "rgba(224, 242, 254, 0.20)");
+      sunAtmosphere.addColorStop(1, "transparent");
+
+      ctx.fillStyle = sunAtmosphere;
+      ctx.beginPath();
+      ctx.ellipse(sunX, sunY, sunRadiusX * 3.8, sunRadiusY * 3.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4. Disco brillante aplanado por refracción
+      ctx.fillStyle = "rgba(255, 255, 248, 0.98)";
+      ctx.beginPath();
+      ctx.ellipse(sunX, sunY, sunRadiusX, sunRadiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Franja de bruma / estrato que cruza el sol (rompe el círculo perfecto)
+      ctx.fillStyle = "rgba(224, 242, 254, 0.35)";
+      ctx.beginPath();
+      ctx.moveTo(sunX - sunRadiusX * 1.5, sunY - 4);
+      ctx.quadraticCurveTo(sunX, sunY - 8, sunX + sunRadiusX * 1.6, sunY - 2);
+      ctx.quadraticCurveTo(sunX, sunY, sunX - sunRadiusX * 1.5, sunY - 4);
+      ctx.closePath();
+      ctx.fill();
 
       ctx.restore();
     };
@@ -584,16 +758,12 @@ export default function AnimatedBackground() {
 
       if (isDark) {
         // ========================================================
-        // 🌲 MODO OSCURO: BOSQUE VIVO (CIELO ESTRELLADO + LUNA + FAROLES)
+        // 🌲 MODO OSCURO: BOSQUE VIVO
         // ========================================================
-
-        // 1. Aurora Boreal en la atmósfera superior
         drawAurora();
+        drawRealisticMoon();
 
-        // 2. Luna plateada mística
-        drawMoon();
-
-        // 3. Estrellas con destellos de 4 puntas
+        // Estrellas
         for (let i = 0; i < stars.length; i++) {
           const st = stars[i];
           const twinkle = (Math.sin(clock * st.twinkleSpeed * 10 + st.phase) + 1) / 2;
@@ -604,7 +774,6 @@ export default function AnimatedBackground() {
           ctx.arc(st.x, st.y, st.radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // Destello en cruz para estrellas destacadas
           if (st.isGlint && twinkle > 0.6) {
             const glintLen = st.radius * 3.5 * twinkle;
             ctx.strokeStyle = `rgba(255, 255, 255, ${(alpha * 0.7).toFixed(2)})`;
@@ -618,7 +787,7 @@ export default function AnimatedBackground() {
           }
         }
 
-        // 4. Estrella fugaz periódica
+        // Estrella fugaz
         shootingStarTimer += 0.016;
         if (shootingStarTimer > 5.5 && !shootingStar.active) {
           shootingStar = {
@@ -656,12 +825,12 @@ export default function AnimatedBackground() {
           }
         }
 
-        // 5. Pinos Lejanos (con contraste visible: verde esmeralda profundo)
+        // Pinos Lejanos
         for (let i = 0; i < distantTrees.length; i++) {
           drawOrganicPine(distantTrees[i], baseY, "rgba(8, 48, 40, 0.55)", "rgba(20, 110, 92, 0.25)", false, globalWind * 0.4);
         }
 
-        // 6. Bruma nocturna ambiental
+        // Bruma intermedia
         const midMist = ctx.createLinearGradient(0, baseY - 120, 0, baseY);
         midMist.addColorStop(0, "transparent");
         midMist.addColorStop(0.6, "rgba(6, 38, 32, 0.40)");
@@ -669,22 +838,22 @@ export default function AnimatedBackground() {
         ctx.fillStyle = midMist;
         ctx.fillRect(0, baseY - 120, width, 120);
 
-        // 7. Pinos Medios (con reborde verde menta luminiscente para máxima nitidez)
+        // Pinos Medios
         for (let i = 0; i < midTrees.length; i++) {
           drawOrganicPine(midTrees[i], baseY, "rgba(10, 62, 52, 0.78)", "rgba(45, 212, 191, 0.30)", false, globalWind * 0.7);
         }
 
-        // 8. Faroles Rústicos encendidos entre los árboles
-        for (const l of lanterns) {
-          drawRusticLantern(l, false);
-        }
-
-        // 9. Pinos Cercanos (bien definidos y contrastados)
+        // Pinos Cercanos (se dibujan antes de los faroles)
         for (let i = 0; i < nearTrees.length; i++) {
           drawOrganicPine(nearTrees[i], baseY, "rgba(8, 52, 44, 0.92)", "rgba(52, 211, 153, 0.45)", false, globalWind);
         }
 
-        // 10. Esporas ascendentes
+        // FAROLES EN PRIMER PLANO: ADELANTE DE TODOS LOS ÁRBOLES
+        for (const l of lanterns) {
+          drawRusticLantern(l, false);
+        }
+
+        // Esporas
         for (let i = 0; i < spores.length; i++) {
           const sp = spores[i];
           sp.x += sp.vx + Math.sin(clock * 1.5 + i) * 0.3;
@@ -699,7 +868,7 @@ export default function AnimatedBackground() {
           ctx.fill();
         }
 
-        // 11. Luciérnagas vivas con física y reacción al cursor
+        // Luciérnagas
         for (let i = 0; i < fireflies.length; i++) {
           const f = fireflies[i];
           f.phase += f.pulseSpeed;
@@ -749,36 +918,93 @@ export default function AnimatedBackground() {
 
       } else {
         // ========================================================
-        // ❄️ MODO CLARO: BOSQUE EN INVIERNO (SOL PÁLIDO + NUBES + FAROLES)
+        // ❄️ MODO CLARO: BOSQUE EN INVIERNO (DÍA)
         // ========================================================
 
-        // 1. Sol pálido de invierno y nubes flotantes
-        drawWinterSunAndClouds();
+        // 1. Sol Realista con halos, rayos y nubes estratificadas orgánicas
+        drawRealisticWinterSun();
 
-        // 2. Destellos de cristales de hielo (Diamond Dust) en el cielo
+        // 2. Nubes nórdicas flotantes (orgánicas y no circulares)
+        for (const cloud of winterClouds) {
+          cloud.x += cloud.speed;
+          if (cloud.x > width + cloud.width) {
+            cloud.x = -cloud.width;
+            cloud.y = 35 + Math.random() * 90;
+          }
+          drawOrganicWinterCloud(cloud);
+        }
+
+        // 3. Aves invernales volando en formación
+        for (const bird of winterBirds) {
+          bird.x += bird.speed;
+          if (bird.x > width + 60) {
+            bird.x = -60;
+          }
+          const wingFlap = Math.sin(clock * 5 + bird.wingPhase) * (bird.size * 0.8);
+          ctx.strokeStyle = "rgba(71, 85, 105, 0.65)";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(bird.x - bird.size, bird.y - wingFlap);
+          ctx.quadraticCurveTo(bird.x - bird.size * 0.4, bird.y, bird.x, bird.y);
+          ctx.quadraticCurveTo(bird.x + bird.size * 0.4, bird.y, bird.x + bird.size, bird.y - wingFlap);
+          ctx.stroke();
+        }
+
+        // 4. Destellos de Diamante (Diamond Dust) en el aire
         for (const crystal of iceCrystals) {
           crystal.y += crystal.vy;
           crystal.glintPhase += crystal.glintSpeed;
-          if (crystal.y > height * 0.7) {
-            crystal.y = 20;
+          if (crystal.y > height * 0.8) {
+            crystal.y = 15;
             crystal.x = Math.random() * width;
           }
 
           const glint = (Math.sin(crystal.glintPhase) + 1) / 2;
-          if (glint > 0.4) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${(glint * 0.85).toFixed(2)})`;
+          if (glint > 0.35) {
+            const sparkSize = crystal.size * glint * 1.5;
+            ctx.fillStyle = `rgba(255, 255, 255, ${(glint * 0.9).toFixed(2)})`;
             ctx.beginPath();
-            ctx.arc(crystal.x, crystal.y, crystal.size * glint, 0, Math.PI * 2);
+            ctx.arc(crystal.x, crystal.y, crystal.size * 0.6, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.strokeStyle = `rgba(224, 242, 254, ${(glint * 0.8).toFixed(2)})`;
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(crystal.x - sparkSize, crystal.y);
+            ctx.lineTo(crystal.x + sparkSize, crystal.y);
+            ctx.moveTo(crystal.x, crystal.y - sparkSize);
+            ctx.lineTo(crystal.x + sparkSize, crystal.y);
+            ctx.stroke();
           }
         }
 
-        // 3. Pinos lejanos nevados
+        // 5. Esporas de escarcha / Polvo de nieve en suspensión (partículas diurnas)
+        for (const mote of frostMotes) {
+          mote.x += mote.vx + Math.sin(clock * mote.swirlSpeed * 10 + mote.swirlOffset) * 0.5 + globalWind * 0.4;
+          mote.y += mote.vy;
+
+          if (mote.y < 0) {
+            mote.y = height + 10;
+            mote.x = Math.random() * width;
+          }
+
+          ctx.fillStyle = `rgba(204, 251, 241, ${(mote.alpha * 0.6).toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(mote.x, mote.y, mote.radius * 1.6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${mote.alpha.toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(mote.x, mote.y, mote.radius * 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 6. Pinos lejanos nevados
         for (let i = 0; i < distantTrees.length; i++) {
           drawOrganicPine(distantTrees[i], baseY, "rgba(175, 210, 208, 0.45)", null, false, globalWind * 0.4);
         }
 
-        // 4. Bruma invernal
+        // 7. Bruma invernal a nivel del suelo
         const winterMist = ctx.createLinearGradient(0, baseY - 110, 0, baseY);
         winterMist.addColorStop(0, "transparent");
         winterMist.addColorStop(0.6, "rgba(224, 242, 240, 0.45)");
@@ -786,31 +1012,31 @@ export default function AnimatedBackground() {
         ctx.fillStyle = winterMist;
         ctx.fillRect(0, baseY - 110, width, 110);
 
-        // 5. Pinos medios con escarcha blanca
+        // 8. Pinos medios con escarcha blanca
         for (let i = 0; i < midTrees.length; i++) {
           drawOrganicPine(midTrees[i], baseY, "rgba(135, 185, 180, 0.65)", null, true, globalWind * 0.7);
         }
 
-        // 6. Faroles rústicos de invierno con luz cálida dorada en la nieve
-        for (const l of lanterns) {
-          drawRusticLantern(l, true);
-        }
-
-        // 7. Pinos cercanos con copos de nieve en las ramas
+        // 9. Pinos cercanos con copos de nieve en las ramas (se dibujan antes de los faroles)
         for (let i = 0; i < nearTrees.length; i++) {
           drawOrganicPine(nearTrees[i], baseY, "rgba(105, 160, 155, 0.82)", null, true, globalWind);
         }
 
-        // 8. Copos de nieve con paralaje
+        // 10. FAROLES EN PRIMER PLANO: ADELANTE DE TODOS LOS ÁRBOLES (APAGADOS EN EL DÍA)
+        for (const l of lanterns) {
+          drawRusticLantern(l, true);
+        }
+
+        // 11. Nieve cayendo con viento dinámico y reacción al cursor
         for (let i = 0; i < snowflakes.length; i++) {
           const s = snowflakes[i];
           s.y += s.vy;
-          s.x += Math.sin(clock * s.swaySpeed * 10 + s.swayOffset) * s.swayAmp + globalWind * 0.5;
+          s.x += Math.sin(clock * s.swaySpeed * 10 + s.swayOffset) * s.swayAmp + globalWind * 0.6;
 
           const distMouse = Math.hypot(s.x - mouseX, s.y - mouseY);
-          if (distMouse < 110 && distMouse > 0) {
-            const force = (110 - distMouse) / 110;
-            s.x += (s.x - mouseX > 0 ? 1 : -1) * force * 2.2;
+          if (distMouse < 120 && distMouse > 0) {
+            const force = (120 - distMouse) / 120;
+            s.x += (s.x - mouseX > 0 ? 1 : -1) * force * 2.5;
           }
 
           if (s.y > height + 10) {
@@ -826,7 +1052,7 @@ export default function AnimatedBackground() {
           ctx.fill();
 
           if (s.depth === 2) {
-            ctx.fillStyle = `rgba(204, 251, 241, ${(s.alpha * 0.35).toFixed(2)})`;
+            ctx.fillStyle = `rgba(204, 251, 241, ${(s.alpha * 0.4).toFixed(2)})`;
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.radius * 1.8, 0, Math.PI * 2);
             ctx.fill();
@@ -854,7 +1080,6 @@ export default function AnimatedBackground() {
       aria-hidden="true"
       className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
     >
-      {/* Canvas 60 FPS: Bosque Vivo con Faroles, Luna, Aurora, Estrellas Fugaces y Sol de Invierno */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
 
       {/* Iluminación atmosférica ambiental */}
