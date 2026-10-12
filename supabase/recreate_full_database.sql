@@ -26,10 +26,10 @@ DROP TABLE IF EXISTS public.social_links CASCADE;
 DROP TABLE IF EXISTS public.admin_tasks CASCADE;
 
 -- ----------------------------------------------------------------------------
--- PASO 3: TABLA CATEGORÍAS / ÁREAS TEMÁTICAS (categories)
+-- PASO 3: TABLA CATEGORÍAS DE RECURSOS EXTERNOS (categories)
 -- ----------------------------------------------------------------------------
--- Clasifica las materias por área de estudio (ej: Programación, Redes, IA)
--- y los recursos de recomendación para filtrado de los estudiantes.
+-- Clasifica los recursos y recomendaciones externas (herramientas de IA, cursos,
+-- plataformas y enlaces) para el filtrado temático de los estudiantes.
 CREATE TABLE public.categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL UNIQUE,
