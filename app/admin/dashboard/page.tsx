@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useId } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,22 +27,16 @@ import {
   Trash2, 
   Edit3, 
   ExternalLink, 
-  Calendar, 
   Home, 
   CheckCircle2, 
   FolderOpen, 
-  Tag, 
-  AlertCircle, 
   RefreshCw, 
   Search, 
   Layers, 
   X, 
   Menu, 
   Sparkles, 
-  Eye, 
-  EyeOff, 
   ArrowUpRight, 
-  Check, 
   ChevronRight, 
   ShieldCheck, 
   Loader2 
@@ -50,6 +44,15 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import ConfirmModal from "@/components/ConfirmModal";
 import InitialsAvatar from "@/components/InitialsAvatar";
+import {
+  AdminStatCard,
+  AdminPageHeader,
+  AdminEmptyState,
+  AuxiliaryModal,
+  CategoryModal,
+  RecommendationModal,
+  SocialModal,
+} from "@/components/admin";
 
 type AdminTab = "resumen" | "auxiliaturas" | "categorias" | "recomendaciones" | "redes";
 
@@ -75,44 +78,13 @@ export default function AdminDashboardPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [activeModalType, setActiveModalType] = useState<"aux" | "cat" | "rec" | "soc" | null>(null);
 
-  // Formularios de Auxiliatura
-  const [auxFormId, setAuxFormId] = useState<string | null>(null);
-  const [auxSubjectName, setAuxSubjectName] = useState("");
-  const [auxSubjectCode, setAuxSubjectCode] = useState("");
-  const [auxGroupCode, setAuxGroupCode] = useState("");
-  const [auxSemester, setAuxSemester] = useState("II-2026");
-  const [auxImageUrl, setAuxImageUrl] = useState("");
-  const [auxDescription, setAuxDescription] = useState("");
-  const [auxDriveLinks, setAuxDriveLinks] = useState<DriveLinkItem[]>([
-    { title: "Carpeta Principal de Drive", url: "", type: "general" }
-  ]);
+  // Elementos seleccionados para editar
+  const [selectedAux, setSelectedAux] = useState<Auxiliary | null>(null);
+  const [selectedCat, setSelectedCat] = useState<Category | null>(null);
+  const [selectedRec, setSelectedRec] = useState<Recommendation | null>(null);
+  const [selectedSoc, setSelectedSoc] = useState<SocialLink | null>(null);
 
-  // Formularios de Categoría
-  const [catFormId, setCatFormId] = useState<string | null>(null);
-  const [catName, setCatName] = useState("");
-  const [catSlug, setCatSlug] = useState("");
-  const [catDescription, setCatDescription] = useState("");
-  const [catColor, setCatColor] = useState("#0d9488");
-  const [catDisplayOrder, setCatDisplayOrder] = useState(1);
-
-  // Formularios de Recomendación
-  const [recFormId, setRecFormId] = useState<string | null>(null);
-  const [recTitle, setRecTitle] = useState("");
-  const [recCategoryId, setRecCategoryId] = useState("");
-  const [recDescription, setRecDescription] = useState("");
-  const [recUrl, setRecUrl] = useState("");
-  const [recImageUrl, setRecImageUrl] = useState("");
-  const [recTags, setRecTags] = useState("");
-  const [recFeatured, setRecFeatured] = useState(false);
-  const [recDisplayOrder, setRecDisplayOrder] = useState(1);
-
-  // Formularios de Red Social
-  const [socFormId, setSocFormId] = useState<string | null>(null);
-  const [socLabel, setSocLabel] = useState("");
-  const [socIcon, setSocIcon] = useState("github");
-  const [socUrl, setSocUrl] = useState("");
-  const [socImageUrl, setSocImageUrl] = useState("");
-  const [socDisplayOrder, setSocDisplayOrder] = useState(1);
+  // Errores de validación de URL para Heurística 9
   const [recUrlError, setRecUrlError] = useState("");
   const [socialUrlError, setSocialUrlError] = useState("");
 
@@ -173,12 +145,7 @@ export default function AdminDashboardPage() {
       ]);
 
       if (auxRes.data) setAuxiliariesList(auxRes.data as Auxiliary[]);
-      if (catRes.data) {
-        setCategoriesList(catRes.data as Category[]);
-        if (catRes.data.length > 0 && !recCategoryId) {
-          setRecCategoryId(catRes.data[0].id);
-        }
-      }
+      if (catRes.data) setCategoriesList(catRes.data as Category[]);
       if (recRes.data) setRecommendationsList(recRes.data as Recommendation[]);
       if (socRes.data) setSocialLinksList(socRes.data as SocialLink[]);
     } catch (err) {
@@ -202,59 +169,39 @@ export default function AdminDashboardPage() {
   // CRUD AUXILIATURAS
   // -------------------------------------------------------------
   const openAuxModal = (aux?: Auxiliary) => {
-    if (aux) {
-      setModalMode("edit");
-      setAuxFormId(aux.id);
-      setAuxSubjectName(aux.subject_name);
-      setAuxSubjectCode(aux.subject_code);
-      setAuxGroupCode(aux.group_code);
-      setAuxSemester(aux.semester || "II-2026");
-      setAuxImageUrl(aux.image_url || "");
-      setAuxDescription(aux.description || "");
-      setAuxDriveLinks(aux.drive_links?.length ? aux.drive_links : [{ title: "Carpeta Principal de Drive", url: "", type: "general" }]);
-    } else {
-      setModalMode("create");
-      setAuxFormId(null);
-      setAuxSubjectName("");
-      setAuxSubjectCode("");
-      setAuxGroupCode("");
-      setAuxSemester("II-2026");
-      setAuxImageUrl("");
-      setAuxDescription("");
-      setAuxDriveLinks([{ title: "Carpeta Principal de Drive", url: "", type: "general" }]);
-    }
+    setSelectedAux(aux || null);
+    setModalMode(aux ? "edit" : "create");
     setActiveModalType("aux");
   };
 
-  const handleSaveAuxiliary = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!auxSubjectName.trim() || !auxSubjectCode.trim() || !auxGroupCode.trim()) {
-      showToast("Completa los campos obligatorios (*)");
-      return;
-    }
-
-    const payload = {
-      subject_name: auxSubjectName.trim(),
-      subject_code: auxSubjectCode.trim().toUpperCase(),
-      group_code: auxGroupCode.trim().toUpperCase(),
-      semester: auxSemester.trim(),
-      image_url: auxImageUrl.trim() || null,
-      description: auxDescription.trim() || null,
-      drive_links: auxDriveLinks.filter((l) => l.title.trim() && l.url.trim()),
-      is_active: true,
-    };
-
+  const handleSaveAuxiliary = async (payload: {
+    subject_name: string;
+    subject_code: string;
+    group_code: string;
+    semester: string;
+    image_url: string | null;
+    description: string | null;
+    drive_links: DriveLinkItem[];
+  }) => {
     const supabase = createClient();
     if (supabase) {
-      if (modalMode === "edit" && auxFormId) {
-        const { error } = await supabase.from("auxiliaries").update(payload).eq("id", auxFormId);
+      if (modalMode === "edit" && selectedAux?.id) {
+        const { error } = await supabase.from("auxiliaries").update({
+          ...payload,
+          is_active: selectedAux.is_active ?? true,
+        }).eq("id", selectedAux.id);
+
         if (error) {
           showToast("Error al actualizar la auxiliatura.");
           return;
         }
         showToast("Auxiliatura actualizada exitosamente.");
       } else {
-        const { error } = await supabase.from("auxiliaries").insert([payload]);
+        const { error } = await supabase.from("auxiliaries").insert([{
+          ...payload,
+          is_active: true,
+        }]);
+
         if (error) {
           showToast("Error al guardar en Supabase.");
           return;
@@ -278,50 +225,25 @@ export default function AdminDashboardPage() {
   };
 
   // -------------------------------------------------------------
-  // CRUD CATEGORÍAS (NEW)
+  // CRUD CATEGORÍAS
   // -------------------------------------------------------------
   const openCategoryModal = (cat?: Category) => {
-    if (cat) {
-      setModalMode("edit");
-      setCatFormId(cat.id);
-      setCatName(cat.name);
-      setCatSlug(cat.slug);
-      setCatDescription(cat.description || "");
-      setCatColor(cat.color || "#0d9488");
-      setCatDisplayOrder(cat.display_order ?? 1);
-    } else {
-      setModalMode("create");
-      setCatFormId(null);
-      setCatName("");
-      setCatSlug("");
-      setCatDescription("");
-      setCatColor("#0d9488");
-      setCatDisplayOrder(categoriesList.length + 1);
-    }
+    setSelectedCat(cat || null);
+    setModalMode(cat ? "edit" : "create");
     setActiveModalType("cat");
   };
 
-  const handleSaveCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!catName.trim()) {
-      showToast("Ingresa el nombre de la categoría.");
-      return;
-    }
-
-    const slug = catSlug.trim() || catName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-
-    const payload = {
-      name: catName.trim(),
-      slug,
-      description: catDescription.trim() || null,
-      color: catColor,
-      display_order: Number(catDisplayOrder) || 1,
-    };
-
+  const handleSaveCategory = async (payload: {
+    name: string;
+    slug: string;
+    color: string;
+    description: string | null;
+    display_order: number;
+  }) => {
     const supabase = createClient();
     if (supabase) {
-      if (modalMode === "edit" && catFormId) {
-        const { error } = await supabase.from("categories").update(payload).eq("id", catFormId);
+      if (modalMode === "edit" && selectedCat?.id) {
+        const { error } = await supabase.from("categories").update(payload).eq("id", selectedCat.id);
         if (error) {
           showToast("Error al actualizar la categoría.");
           return;
@@ -345,61 +267,33 @@ export default function AdminDashboardPage() {
   // CRUD RECOMENDACIONES
   // -------------------------------------------------------------
   const openRecommendationModal = (rec?: Recommendation) => {
-    if (rec) {
-      setModalMode("edit");
-      setRecFormId(rec.id);
-      setRecTitle(rec.title);
-      setRecCategoryId(rec.category_id);
-      setRecDescription(rec.description);
-      setRecUrl(rec.url);
-      setRecImageUrl(rec.image_url || "");
-      setRecTags(rec.tags ? rec.tags.join(", ") : "");
-      setRecFeatured(rec.is_featured);
-      setRecDisplayOrder(rec.display_order ?? 1);
-    } else {
-      setModalMode("create");
-      setRecFormId(null);
-      setRecTitle("");
-      setRecCategoryId(categoriesList[0]?.id || "");
-      setRecDescription("");
-      setRecUrl("");
-      setRecImageUrl("");
-      setRecTags("");
-      setRecFeatured(false);
-      setRecDisplayOrder(recommendationsList.length + 1);
-    }
+    setSelectedRec(rec || null);
+    setModalMode(rec ? "edit" : "create");
+    setRecUrlError("");
     setActiveModalType("rec");
   };
 
-  const handleSaveRecommendation = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveRecommendation = async (payload: {
+    title: string;
+    category_id: string;
+    description: string;
+    url: string;
+    image_url: string | null;
+    tags: string[];
+    is_featured: boolean;
+    display_order: number;
+  }) => {
     setRecUrlError("");
-    if (!recTitle.trim() || !recUrl.trim() || !recCategoryId) {
-      showToast("Completa los campos obligatorios (*)");
-      return;
-    }
-
-    if (!recUrl.trim().startsWith("http://") && !recUrl.trim().startsWith("https://")) {
+    if (!payload.url.startsWith("http://") && !payload.url.startsWith("https://")) {
       setRecUrlError("La URL debe comenzar con http:// o https://");
       showToast("Ingresa una URL válida con http:// o https://");
       return;
     }
 
-    const payload = {
-      title: recTitle.trim(),
-      category_id: recCategoryId,
-      description: recDescription.trim(),
-      url: recUrl.trim(),
-      image_url: recImageUrl.trim() || null,
-      tags: recTags.split(",").map((t) => t.trim()).filter(Boolean),
-      is_featured: recFeatured,
-      display_order: Number(recDisplayOrder) || 1,
-    };
-
     const supabase = createClient();
     if (supabase) {
-      if (modalMode === "edit" && recFormId) {
-        const { error } = await supabase.from("recommendations").update(payload).eq("id", recFormId);
+      if (modalMode === "edit" && selectedRec?.id) {
+        const { error } = await supabase.from("recommendations").update(payload).eq("id", selectedRec.id);
         if (error) {
           showToast("Error al actualizar recomendación.");
           return;
@@ -433,53 +327,31 @@ export default function AdminDashboardPage() {
   // CRUD REDES SOCIALES
   // -------------------------------------------------------------
   const openSocialModal = (soc?: SocialLink) => {
-    if (soc) {
-      setModalMode("edit");
-      setSocFormId(soc.id);
-      setSocLabel(soc.label);
-      setSocIcon(soc.icon_name);
-      setSocUrl(soc.url);
-      setSocImageUrl(soc.image_url || "");
-      setSocDisplayOrder(soc.display_order);
-    } else {
-      setModalMode("create");
-      setSocFormId(null);
-      setSocLabel("");
-      setSocIcon("github");
-      setSocUrl("");
-      setSocImageUrl("");
-      setSocDisplayOrder(socialLinksList.length + 1);
-    }
+    setSelectedSoc(soc || null);
+    setModalMode(soc ? "edit" : "create");
+    setSocialUrlError("");
     setActiveModalType("soc");
   };
 
-  const handleSaveSocial = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSocial = async (payload: {
+    label: string;
+    icon_name: string;
+    url: string;
+    image_url: string | null;
+    display_order: number;
+    is_active: boolean;
+  }) => {
     setSocialUrlError("");
-    if (!socLabel.trim() || !socUrl.trim()) {
-      showToast("Ingresa etiqueta y URL.");
-      return;
-    }
-
-    if (!socUrl.trim().startsWith("http://") && !socUrl.trim().startsWith("https://")) {
+    if (!payload.url.startsWith("http://") && !payload.url.startsWith("https://")) {
       setSocialUrlError("La URL debe comenzar con http:// o https://");
       showToast("Ingresa una URL válida con http:// o https://");
       return;
     }
 
-    const payload = {
-      label: socLabel.trim(),
-      icon_name: socIcon,
-      url: socUrl.trim(),
-      image_url: socImageUrl.trim() || null,
-      display_order: Number(socDisplayOrder) || 1,
-      is_active: true,
-    };
-
     const supabase = createClient();
     if (supabase) {
-      if (modalMode === "edit" && socFormId) {
-        const { error } = await supabase.from("social_links").update(payload).eq("id", socFormId);
+      if (modalMode === "edit" && selectedSoc?.id) {
+        const { error } = await supabase.from("social_links").update(payload).eq("id", selectedSoc.id);
         if (error) {
           showToast("Error al actualizar enlace.");
           return;
@@ -551,7 +423,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#dff0fa] dark:bg-[#061317] text-slate-900 dark:text-white p-4">
         <div className="p-8 rounded-3xl bg-white/95 dark:bg-[#07191d]/95 border border-slate-300 dark:border-teal-700/60 shadow-2xl flex flex-col items-center text-center max-w-sm w-full backdrop-blur-xl animate-in zoom-in-95">
-          <div className="w-16 h-16 rounded-2xl p-1 bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-400 shadow-xl shadow-teal-500/25 flex items-center justify-center mb-4 animate-pulse">
+          <div className="w-16 h-16 rounded-2xl p-1 bg-gradient-to-tr from-emerald-400 via-teal-500 to-cyan-400 shadow-xl shadow-teal-500/25 flex items-center justify-center mb-4">
             <div className="w-full h-full rounded-[18px] bg-white dark:bg-[#071915] p-2 flex items-center justify-center">
               <Image src="/images/logo_kiris.png" alt="Logo KIRIS" width={42} height={42} priority />
             </div>
@@ -747,69 +619,40 @@ export default function AdminDashboardPage() {
               </p>
             </div>
 
-            {/* Tarjetas de Métricas KPI */}
+            {/* Tarjetas de Métricas KPI Reutilizables */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-              {[
-                {
-                  label: "Auxiliaturas Activas",
-                  count: auxiliariesList.filter((a) => a.is_active).length,
-                  total: auxiliariesList.length,
-                  tab: "auxiliaturas" as AdminTab,
-                  icon: GraduationCap,
-                  color: "from-emerald-500 to-teal-600",
-                },
-                {
-                  label: "Recursos de IA",
-                  count: recommendationsList.length,
-                  sub: `${recommendationsList.filter((r) => r.is_featured).length} destacados`,
-                  tab: "recomendaciones" as AdminTab,
-                  icon: Compass,
-                  color: "from-teal-500 to-cyan-600",
-                },
-                {
-                  label: "Categorías de IA",
-                  count: categoriesList.length,
-                  sub: "Orden dinámico",
-                  tab: "categorias" as AdminTab,
-                  icon: Layers,
-                  color: "from-cyan-500 to-blue-600",
-                },
-                {
-                  label: "Redes y Contacto",
-                  count: socialLinksList.filter((s) => s.is_active).length,
-                  total: socialLinksList.length,
-                  tab: "redes" as AdminTab,
-                  icon: Share2,
-                  color: "from-blue-600 to-indigo-600",
-                },
-              ].map((kpi, idx) => {
-                const Icon = kpi.icon;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveTab(kpi.tab)}
-                    className="p-5 sm:p-6 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-700/60 shadow-xs hover:shadow-md transition-all text-left flex flex-col justify-between group hover:scale-[1.01]"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs font-bold text-slate-600 dark:text-teal-200/80">
-                        {kpi.label}
-                      </span>
-                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-tr ${kpi.color} flex items-center justify-center text-white shadow-sm`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white">
-                        {kpi.count}
-                      </div>
-                      <div className="text-[11px] font-mono text-teal-700 dark:text-teal-300 mt-1 flex items-center gap-1 font-semibold">
-                        <span>Gestionar sección</span>
-                        <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+              <AdminStatCard
+                label="Auxiliaturas Activas"
+                count={auxiliariesList.filter((a) => a.is_active).length}
+                sub={`${auxiliariesList.length} registradas en total`}
+                icon={GraduationCap}
+                color="from-emerald-500 to-teal-600"
+                onClick={() => setActiveTab("auxiliaturas")}
+              />
+              <AdminStatCard
+                label="Recursos de IA"
+                count={recommendationsList.length}
+                sub={`${recommendationsList.filter((r) => r.is_featured).length} destacados`}
+                icon={Compass}
+                color="from-teal-500 to-cyan-600"
+                onClick={() => setActiveTab("recomendaciones")}
+              />
+              <AdminStatCard
+                label="Categorías de IA"
+                count={categoriesList.length}
+                sub="Orden temático dinámico"
+                icon={Layers}
+                color="from-cyan-500 to-blue-600"
+                onClick={() => setActiveTab("categorias")}
+              />
+              <AdminStatCard
+                label="Redes y Contacto"
+                count={socialLinksList.filter((s) => s.is_active).length}
+                sub={`${socialLinksList.length} canales configurados`}
+                icon={Share2}
+                color="from-blue-600 to-indigo-600"
+                onClick={() => setActiveTab("redes")}
+              />
             </div>
 
             {/* Acciones Rápidas */}
@@ -860,27 +703,16 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================== */}
-        {/* PESTAÑA 2: AUXILIATURAS (CRUD COMPLETO - SIN HORARIOS)      */}
+        {/* PESTAÑA 2: AUXILIATURAS (CRUD COMPLETO - MODULAR)           */}
         {/* =========================================================== */}
         {activeTab === "auxiliaturas" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-slate-900 dark:text-white">
-                  Gestión de Auxiliaturas
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-200/80 mt-1">
-                  Crea, edita y organiza las materias de auxiliatura con sus enlaces oficiales a Google Drive.
-                </p>
-              </div>
-              <button
-                onClick={() => openAuxModal()}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-700/25 transition active:scale-95 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Registrar Nueva Auxiliatura</span>
-              </button>
-            </div>
+            <AdminPageHeader
+              title="Gestión de Auxiliaturas"
+              description="Crea, edita y organiza las materias de auxiliatura con sus enlaces oficiales a Google Drive."
+              actionLabel="Registrar Nueva Auxiliatura"
+              onAction={() => openAuxModal()}
+            />
 
             {/* Barra de Búsqueda */}
             <div className="relative">
@@ -896,11 +728,13 @@ export default function AdminDashboardPage() {
 
             {/* Listado de Auxiliaturas */}
             {filteredAuxiliaries.length === 0 ? (
-              <div className="text-center py-12 rounded-3xl p-6 border border-slate-300 dark:border-teal-800/60 bg-white/80 dark:bg-[#07191d]/80">
-                <GraduationCap className="w-8 h-8 text-teal-400 mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Sin auxiliaturas registradas</h3>
-                <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">Registra tu primera materia de auxiliatura con el botón superior.</p>
-              </div>
+              <AdminEmptyState
+                icon={GraduationCap}
+                title="Sin auxiliaturas registradas"
+                description="Registra tu primera materia de auxiliatura con el botón superior para sincronizarla en el portal."
+                actionLabel="Registrar Auxiliatura"
+                onAction={() => openAuxModal()}
+              />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filteredAuxiliaries.map((aux) => (
@@ -994,35 +828,26 @@ export default function AdminDashboardPage() {
         )}
 
         {/* =========================================================== */}
-        {/* PESTAÑA 3: CATEGORÍAS DE IA (CRUD COMPLETO)                 */}
+        {/* PESTAÑA 3: CATEGORÍAS DE IA (CRUD COMPLETO - MODULAR)       */}
         {/* =========================================================== */}
         {activeTab === "categorias" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-slate-900 dark:text-white">
-                  Categorías de Inteligencia Artificial
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-200/80 mt-1">
-                  Define las categorías temáticas y su orden de despliegue en la plataforma pública de recursos.
-                </p>
-              </div>
-              <button
-                onClick={() => openCategoryModal()}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-700/25 transition active:scale-95 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nueva Categoría</span>
-              </button>
-            </div>
+            <AdminPageHeader
+              title="Categorías de Inteligencia Artificial"
+              description="Define las categorías temáticas y su orden de despliegue en la plataforma pública de recursos."
+              actionLabel="Nueva Categoría"
+              onAction={() => openCategoryModal()}
+            />
 
             {/* Listado de Categorías */}
             {categoriesList.length === 0 ? (
-              <div className="text-center py-12 rounded-3xl p-6 border border-slate-300 dark:border-teal-800/60 bg-white/80 dark:bg-[#07191d]/80">
-                <Layers className="w-8 h-8 text-teal-400 mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Sin categorías creadas</h3>
-                <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">Crea tu primera categoría para organizar los recursos de IA.</p>
-              </div>
+              <AdminEmptyState
+                icon={Layers}
+                title="Sin categorías creadas"
+                description="Crea tu primera categoría para organizar los recursos de IA de forma estructurada."
+                actionLabel="Nueva Categoría"
+                onAction={() => openCategoryModal()}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {categoriesList.map((cat) => {
@@ -1091,23 +916,12 @@ export default function AdminDashboardPage() {
         {/* =========================================================== */}
         {activeTab === "recomendaciones" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-slate-900 dark:text-white">
-                  Recursos &amp; Recomendaciones de IA
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-200/80 mt-1">
-                  Publica herramientas, repositorios, artículos y tutoriales seleccionados para el día a día.
-                </p>
-              </div>
-              <button
-                onClick={() => openRecommendationModal()}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-700/25 transition active:scale-95 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Publicar Nuevo Recurso</span>
-              </button>
-            </div>
+            <AdminPageHeader
+              title="Recursos & Recomendaciones de IA"
+              description="Publica herramientas, repositorios, artículos y tutoriales seleccionados para el día a día."
+              actionLabel="Publicar Nuevo Recurso"
+              onAction={() => openRecommendationModal()}
+            />
 
             {/* Filtros por Categoría & Buscador */}
             <div className="flex flex-col sm:flex-row gap-3">
@@ -1138,11 +952,13 @@ export default function AdminDashboardPage() {
 
             {/* Listado de Recursos */}
             {filteredRecommendations.length === 0 ? (
-              <div className="text-center py-12 rounded-3xl p-6 border border-slate-300 dark:border-teal-800/60 bg-white/80 dark:bg-[#07191d]/80">
-                <Compass className="w-8 h-8 text-teal-400 mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Sin recursos que coincidan</h3>
-                <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">Ajusta los filtros o publica un nuevo recurso.</p>
-              </div>
+              <AdminEmptyState
+                icon={Compass}
+                title="Sin recursos que coincidan"
+                description="Ajusta los filtros de búsqueda o publica un nuevo recurso de inteligencia artificial."
+                actionLabel="Publicar Recurso"
+                onAction={() => openRecommendationModal()}
+              />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filteredRecommendations.map((rec) => {
@@ -1256,31 +1072,22 @@ export default function AdminDashboardPage() {
         {/* =========================================================== */}
         {activeTab === "redes" && (
           <div className="space-y-6 animate-in fade-in duration-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-slate-900 dark:text-white">
-                  Redes Sociales y Enlaces Oficiales
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-200/80 mt-1">
-                  Administra los enlaces de contacto y perfiles profesionales mostrados en la sección Sobre Mí.
-                </p>
-              </div>
-              <button
-                onClick={() => openSocialModal()}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-700/25 transition active:scale-95 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Añadir Red Social</span>
-              </button>
-            </div>
+            <AdminPageHeader
+              title="Redes Sociales y Enlaces Oficiales"
+              description="Administra los enlaces de contacto y perfiles profesionales mostrados en la sección Sobre Mí."
+              actionLabel="Añadir Red Social"
+              onAction={() => openSocialModal()}
+            />
 
             {/* Listado de Redes */}
             {socialLinksList.length === 0 ? (
-              <div className="text-center py-12 rounded-3xl p-6 border border-slate-300 dark:border-teal-800/60 bg-white/80 dark:bg-[#07191d]/80">
-                <Share2 className="w-8 h-8 text-teal-400 mx-auto mb-2" />
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Sin redes registradas</h3>
-                <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">Añade enlaces a GitHub, LinkedIn, WhatsApp u otros canales.</p>
-              </div>
+              <AdminEmptyState
+                icon={Share2}
+                title="Sin redes registradas"
+                description="Añade enlaces a GitHub, LinkedIn, WhatsApp u otros canales oficiales."
+                actionLabel="Añadir Red Social"
+                onAction={() => openSocialModal()}
+              />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {socialLinksList.map((soc) => (
@@ -1342,578 +1149,45 @@ export default function AdminDashboardPage() {
       </main>
 
       {/* ------------------------------------------------------------- */}
-      {/* MODAL CRUD: AUXILIATURA (Crear / Editar)                       */}
+      {/* MODALES CRUD MODULARES Y REUTILIZABLES                        */}
       {/* ------------------------------------------------------------- */}
-      {activeModalType === "aux" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-7 bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/60 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-teal-900/60 mb-5">
-              <h3 className="text-lg font-display font-black text-slate-900 dark:text-white">
-                {modalMode === "edit" ? "Editar Auxiliatura" : "Nueva Auxiliatura"}
-              </h3>
-              <button
-                onClick={() => setActiveModalType(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-teal-900"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <AuxiliaryModal
+        isOpen={activeModalType === "aux"}
+        mode={modalMode}
+        initialData={selectedAux}
+        onClose={() => setActiveModalType(null)}
+        onSave={handleSaveAuxiliary}
+        subjectNameTestId="admin-subject-name" /* data-testid="admin-subject-name" */
+        saveBtnTestId="admin-save-aux-btn" /* data-testid="admin-save-aux-btn" */
+      />
 
-            <form onSubmit={handleSaveAuxiliary} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Nombre de la Materia *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    data-testid="admin-subject-name"
-                    placeholder="Ej. Estructuras de Datos I"
-                    value={auxSubjectName}
-                    onChange={(e) => setAuxSubjectName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Sigla / Código *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="INF-220"
-                    value={auxSubjectCode}
-                    onChange={(e) => setAuxSubjectCode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
+      <CategoryModal
+        isOpen={activeModalType === "cat"}
+        mode={modalMode}
+        initialData={selectedCat}
+        onClose={() => setActiveModalType(null)}
+        onSave={handleSaveCategory}
+        nextOrder={categoriesList.length + 1}
+      />
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Grupo *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="SA o SB"
-                    value={auxGroupCode}
-                    onChange={(e) => setAuxGroupCode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Semestre
-                  </label>
-                  <input
-                    type="text"
-                    value={auxSemester}
-                    onChange={(e) => setAuxSemester(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
+      <RecommendationModal
+        isOpen={activeModalType === "rec"}
+        mode={modalMode}
+        initialData={selectedRec}
+        categories={categoriesList}
+        onClose={() => setActiveModalType(null)}
+        onSave={handleSaveRecommendation}
+        nextOrder={recommendationsList.length + 1}
+      />
 
-              {/* URL de Imagen con Preview */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  URL de Imagen de Portada / Logo (Opcional)
-                </label>
-                <div className="flex items-center gap-3">
-                  <InitialsAvatar src={auxImageUrl} name={auxSubjectName || "Materia"} size="md" />
-                  <input
-                    type="url"
-                    placeholder="https://... (Si está vacío, se usarán las iniciales automáticas)"
-                    value={auxImageUrl}
-                    onChange={(e) => setAuxImageUrl(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Descripción o Indicaciones
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Detalles sobre el avance, materiales o avisos..."
-                  value={auxDescription}
-                  onChange={(e) => setAuxDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              {/* Enlaces de Google Drive Dinámicos */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-slate-700 dark:text-teal-200">
-                    Carpetas en Google Drive
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setAuxDriveLinks([...auxDriveLinks, { title: "", url: "", type: "general" }])}
-                    className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Añadir enlace</span>
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {auxDriveLinks.map((link, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="Título (Ej. Prácticos)"
-                        value={link.title}
-                        onChange={(e) => {
-                          const updated = [...auxDriveLinks];
-                          updated[idx].title = e.target.value;
-                          setAuxDriveLinks(updated);
-                        }}
-                        className="w-1/3 px-3 py-2 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                      />
-                      <input
-                        type="url"
-                        placeholder="https://drive.google.com/..."
-                        value={link.url}
-                        onChange={(e) => {
-                          const updated = [...auxDriveLinks];
-                          updated[idx].url = e.target.value;
-                          setAuxDriveLinks(updated);
-                        }}
-                        className="flex-1 px-3 py-2 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                      />
-                      {auxDriveLinks.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setAuxDriveLinks(auxDriveLinks.filter((_, i) => i !== idx))}
-                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 dark:border-teal-900/60 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setActiveModalType(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-teal-200 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  data-testid="admin-save-aux-btn"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25"
-                >
-                  {modalMode === "edit" ? "Guardar Cambios" : "Crear Auxiliatura"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL CRUD: CATEGORÍA (Crear / Editar)                         */}
-      {/* ------------------------------------------------------------- */}
-      {activeModalType === "cat" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl p-6 sm:p-7 bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/60 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-teal-900/60 mb-5">
-              <h3 className="text-lg font-display font-black text-slate-900 dark:text-white">
-                {modalMode === "edit" ? "Editar Categoría" : "Nueva Categoría de IA"}
-              </h3>
-              <button
-                onClick={() => setActiveModalType(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-teal-900"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveCategory} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Nombre de la Categoría *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Visión por Computadora"
-                  value={catName}
-                  onChange={(e) => {
-                    setCatName(e.target.value);
-                    if (modalMode === "create") {
-                      setCatSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""));
-                    }
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Slug Identificador
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="vision-computadora"
-                    value={catSlug}
-                    onChange={(e) => setCatSlug(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Orden de Visualización
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={catDisplayOrder}
-                    onChange={(e) => setCatDisplayOrder(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Color Temático
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={catColor}
-                    onChange={(e) => setCatColor(e.target.value)}
-                    className="w-10 h-10 rounded-xl cursor-pointer border border-slate-300 dark:border-teal-800"
-                  />
-                  <input
-                    type="text"
-                    value={catColor}
-                    onChange={(e) => setCatColor(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Descripción (Opcional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Breve reseña sobre los recursos incluidos..."
-                  value={catDescription}
-                  onChange={(e) => setCatDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 dark:border-teal-900/60 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setActiveModalType(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-teal-200 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25"
-                >
-                  {modalMode === "edit" ? "Guardar Cambios" : "Crear Categoría"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL CRUD: RECURSO / RECOMENDACIÓN (Crear / Editar)           */}
-      {/* ------------------------------------------------------------- */}
-      {activeModalType === "rec" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-7 bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/60 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-teal-900/60 mb-5">
-              <h3 className="text-lg font-display font-black text-slate-900 dark:text-white">
-                {modalMode === "edit" ? "Editar Recurso de IA" : "Nuevo Recurso de IA"}
-              </h3>
-              <button
-                onClick={() => setActiveModalType(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-teal-900"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveRecommendation} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Título del Recurso *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. PyTorch Documentation & Tutorials"
-                  value={recTitle}
-                  onChange={(e) => setRecTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Categoría *
-                  </label>
-                  <select
-                    required
-                    value={recCategoryId}
-                    onChange={(e) => setRecCategoryId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-semibold"
-                  >
-                    {categoriesList.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Orden de Despliegue
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={recDisplayOrder}
-                    onChange={(e) => setRecDisplayOrder(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  URL del Enlace Web *
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://..."
-                  value={recUrl}
-                  onChange={(e) => setRecUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                />
-              </div>
-
-              {/* URL de Imagen con Avatar de Iniciales de Respaldo */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  URL de Imagen / Logo del Recurso (Opcional)
-                </label>
-                <div className="flex items-center gap-3">
-                  <InitialsAvatar src={recImageUrl} name={recTitle || "Recurso"} size="md" />
-                  <input
-                    type="url"
-                    placeholder="https://... (Si está vacío, se usan las iniciales generativas)"
-                    value={recImageUrl}
-                    onChange={(e) => setRecImageUrl(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Descripción del Recurso
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="Explicación concisa de su utilidad..."
-                  value={recDescription}
-                  onChange={(e) => setRecDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Etiquetas (separadas por comas)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Machine Learning, Python, Framework"
-                  value={recTags}
-                  onChange={(e) => setRecTags(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="recFeatured"
-                  checked={recFeatured}
-                  onChange={(e) => setRecFeatured(e.target.checked)}
-                  className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
-                />
-                <label htmlFor="recFeatured" className="text-xs font-semibold text-slate-700 dark:text-teal-200 cursor-pointer">
-                  Marcar como Recurso Destacado (Insignia especial en el portal)
-                </label>
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 dark:border-teal-900/60 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setActiveModalType(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-teal-200 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25"
-                >
-                  {modalMode === "edit" ? "Guardar Cambios" : "Publicar Recurso"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL CRUD: RED SOCIAL (Crear / Editar)                        */}
-      {/* ------------------------------------------------------------- */}
-      {activeModalType === "soc" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl p-6 sm:p-7 bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/60 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-teal-900/60 mb-5">
-              <h3 className="text-lg font-display font-black text-slate-900 dark:text-white">
-                {modalMode === "edit" ? "Editar Red Social" : "Nueva Red Social"}
-              </h3>
-              <button
-                onClick={() => setActiveModalType(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-teal-900"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveSocial} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  Etiqueta / Nombre *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="GitHub, LinkedIn, WhatsApp..."
-                  value={socLabel}
-                  onChange={(e) => setSocLabel(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Tipo de Icono
-                  </label>
-                  <select
-                    value={socIcon}
-                    onChange={(e) => setSocIcon(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs"
-                  >
-                    <option value="github">GitHub</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="youtube">YouTube</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="twitter">X / Twitter</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="mail">Correo / Mail</option>
-                    <option value="globe">Sitio Web / Web</option>
-                    <option value="aws">AWS</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                    Orden
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={socDisplayOrder}
-                    onChange={(e) => setSocDisplayOrder(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  URL del Perfil o Canal *
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://..."
-                  value={socUrl}
-                  onChange={(e) => setSocUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-teal-200 mb-1">
-                  URL de Imagen / Logo Personalizado (Opcional)
-                </label>
-                <div className="flex items-center gap-3">
-                  <InitialsAvatar src={socImageUrl} name={socLabel || "Red"} size="sm" />
-                  <input
-                    type="url"
-                    placeholder="https://... (Opcional)"
-                    value={socImageUrl}
-                    onChange={(e) => setSocImageUrl(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800 text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 dark:border-teal-900/60 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setActiveModalType(null)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-teal-200 hover:bg-slate-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-700/25"
-                >
-                  {modalMode === "edit" ? "Guardar Cambios" : "Añadir Enlace"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <SocialModal
+        isOpen={activeModalType === "soc"}
+        mode={modalMode}
+        initialData={selectedSoc}
+        onClose={() => setActiveModalType(null)}
+        onSave={handleSaveSocial}
+        nextOrder={socialLinksList.length + 1}
+      />
 
       {/* ------------------------------------------------------------- */}
       {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN                          */}
