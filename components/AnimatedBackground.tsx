@@ -266,7 +266,7 @@ export default function AnimatedBackground() {
         }
       } else {
         // --- DÍA / BOSQUE EN INVIERNO ---
-        // Nubes nórdicas realistas alargadas y estratificadas
+        // Nubes nórdicas realistas alargadas en tono gris claro suave
         const cloudCount = 4;
         for (let i = 0; i < cloudCount; i++) {
           winterClouds.push({
@@ -275,11 +275,12 @@ export default function AnimatedBackground() {
             width: 260 + Math.random() * 160,
             height: 26 + Math.random() * 14,
             speed: 0.12 + Math.random() * 0.08,
-            alpha: 0.28 + Math.random() * 0.18,
+            alpha: 0.32 + Math.random() * 0.18,
             wispOffset: Math.random() * Math.PI * 2,
           });
         }
 
+        // Cristales de hielo en el aire (azul blanquecino)
         for (let i = 0; i < 40; i++) {
           iceCrystals.push({
             x: Math.random() * width,
@@ -291,6 +292,7 @@ export default function AnimatedBackground() {
           });
         }
 
+        // Esporas de escarcha / Polvo de nieve en suspensión (azul blanquecino)
         const moteCount = Math.min(45, Math.floor(width / 30));
         for (let i = 0; i < moteCount; i++) {
           frostMotes.push({
@@ -299,12 +301,13 @@ export default function AnimatedBackground() {
             vx: (Math.random() - 0.5) * 0.35,
             vy: -(Math.random() * 0.4 + 0.18),
             radius: Math.random() * 1.8 + 0.8,
-            alpha: Math.random() * 0.5 + 0.25,
+            alpha: Math.random() * 0.55 + 0.3,
             swirlSpeed: Math.random() * 0.03 + 0.015,
             swirlOffset: Math.random() * Math.PI * 2,
           });
         }
 
+        // Copos de nieve con paralaje en 3 capas (azul blanquecino para resaltar en fondo blanco)
         const snowCount = Math.min(115, Math.floor((width * height) / 12000) + 35);
         for (let i = 0; i < snowCount; i++) {
           const depth = Math.random() > 0.78 ? 2 : Math.random() > 0.38 ? 1 : 0;
@@ -316,20 +319,25 @@ export default function AnimatedBackground() {
             swaySpeed: Math.random() * 0.025 + 0.012,
             swayAmp: depth === 2 ? 2.8 : 1.6,
             swayOffset: Math.random() * Math.PI * 2,
-            alpha: depth === 2 ? 0.92 : depth === 1 ? 0.7 : 0.42,
+            alpha: depth === 2 ? 0.92 : depth === 1 ? 0.72 : 0.45,
             depth,
           });
         }
 
-        const birdBaseX = width * 0.15;
-        const birdBaseY = 95;
+        // Bandada de 7 aves en formación de cuña horizontal natural hacia la derecha (>)
+        const birdBaseX = width * 0.12;
+        const birdBaseY = 90;
         winterBirds = [
-          { x: birdBaseX, y: birdBaseY, speed: 0.42, wingPhase: 0, size: 4 },
-          { x: birdBaseX - 16, y: birdBaseY + 8, speed: 0.42, wingPhase: 0.5, size: 3.5 },
-          { x: birdBaseX - 32, y: birdBaseY + 16, speed: 0.42, wingPhase: 1.0, size: 3.2 },
-          { x: birdBaseX + 16, y: birdBaseY + 9, speed: 0.42, wingPhase: 0.7, size: 3.6 },
-          { x: birdBaseX + 32, y: birdBaseY + 18, speed: 0.42, wingPhase: 1.2, size: 3.2 },
-          { x: birdBaseX + 48, y: birdBaseY + 27, speed: 0.42, wingPhase: 1.8, size: 3.0 },
+          // 1. Ave líder en la punta frontal derecha
+          { x: birdBaseX, y: birdBaseY, speed: 0.45, wingPhase: 0, size: 4.5 },
+          // 2, 3, 4. Brazo superior extendiéndose hacia atrás y arriba
+          { x: birdBaseX - 25, y: birdBaseY - 12, speed: 0.45, wingPhase: 0.5, size: 4.0 },
+          { x: birdBaseX - 50, y: birdBaseY - 24, speed: 0.45, wingPhase: 1.0, size: 3.6 },
+          { x: birdBaseX - 75, y: birdBaseY - 36, speed: 0.45, wingPhase: 1.5, size: 3.2 },
+          // 5, 6, 7. Brazo inferior extendiéndose hacia atrás y abajo
+          { x: birdBaseX - 25, y: birdBaseY + 12, speed: 0.45, wingPhase: 0.7, size: 4.0 },
+          { x: birdBaseX - 50, y: birdBaseY + 24, speed: 0.45, wingPhase: 1.2, size: 3.6 },
+          { x: birdBaseX - 75, y: birdBaseY + 36, speed: 0.45, wingPhase: 1.7, size: 3.2 },
         ];
       }
     };
@@ -524,16 +532,15 @@ export default function AnimatedBackground() {
       ctx.restore();
     };
 
-    // Dibuja la Luna Realista (orgánica, con mares lunares y bruma nocturna en lugar de un círculo perfecto)
+    // Dibuja la Luna Realista
     const drawRealisticMoon = () => {
       const moonX = width * 0.84;
       const moonY = 80;
       const radiusX = 27;
-      const radiusY = 25.5; // Ligera elipticidad astronómica
+      const radiusY = 25.5;
 
       ctx.save();
 
-      // 1. Aura lunar difusa
       const moonGlow = ctx.createRadialGradient(
         moonX, moonY, radiusX * 0.4,
         moonX, moonY, radiusX * 4.6
@@ -547,18 +554,14 @@ export default function AnimatedBackground() {
       ctx.ellipse(moonX, moonY, radiusX * 4.6, radiusY * 4.6, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 2. Brillo de la Tierra (Earthshine) - Disco lunar no iluminado tenuemente visible
       ctx.fillStyle = "rgba(7, 35, 30, 0.45)";
       ctx.beginPath();
       ctx.ellipse(moonX, moonY, radiusX, radiusY, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 3. Luna Creciente Iluminada con terminador orgánico
       ctx.fillStyle = "#f0fdfa";
       ctx.beginPath();
-      // Borde exterior curvo
       ctx.ellipse(moonX, moonY, radiusX, radiusY, 0, -Math.PI * 0.48, Math.PI * 0.52);
-      // Terminador orgánico interior (curva no puramente circular con relieve lunar)
       ctx.quadraticCurveTo(
         moonX - radiusX * 0.3,
         moonY,
@@ -568,14 +571,12 @@ export default function AnimatedBackground() {
       ctx.closePath();
       ctx.fill();
 
-      // 4. Mares lunares sutiles (manchas orgánicas tenues sobre el relieve)
       ctx.fillStyle = "rgba(167, 243, 208, 0.22)";
       ctx.beginPath();
       ctx.ellipse(moonX + 11, moonY - 5, 4, 3, 0.3, 0, Math.PI * 2);
       ctx.ellipse(moonX + 14, moonY + 7, 5, 3.5, -0.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // 5. Filamento de bruma nocturna cruzando la luna
       ctx.strokeStyle = "rgba(6, 40, 32, 0.35)";
       ctx.lineWidth = 2.5;
       ctx.beginPath();
@@ -611,7 +612,7 @@ export default function AnimatedBackground() {
       ctx.restore();
     };
 
-    // Dibuja una nube invernal realista y orgánica (estratificada, con colas rasgadas de viento)
+    // Dibuja una nube invernal realista en GRIS CLARO nórdico
     const drawOrganicWinterCloud = (cloud: WinterCloud) => {
       const cx = cloud.x;
       const cy = cloud.y;
@@ -620,34 +621,32 @@ export default function AnimatedBackground() {
 
       ctx.save();
 
-      // Gradiente horizontal que difumina los bordes izquierdo y derecho sin cortes circulares
+      // Gradiente horizontal en GRIS CLARO SUAVE (Slate-200 / Slate-300 nórdico)
       const grad = ctx.createLinearGradient(cx - w * 0.5, cy, cx + w * 0.5, cy);
       grad.addColorStop(0, "transparent");
-      grad.addColorStop(0.18, `rgba(255, 255, 255, ${(cloud.alpha * 0.65).toFixed(2)})`);
-      grad.addColorStop(0.5, `rgba(255, 255, 255, ${cloud.alpha.toFixed(2)})`);
-      grad.addColorStop(0.82, `rgba(255, 255, 255, ${(cloud.alpha * 0.65).toFixed(2)})`);
+      grad.addColorStop(0.18, `rgba(203, 213, 225, ${(cloud.alpha * 0.65).toFixed(2)})`);
+      grad.addColorStop(0.5, `rgba(218, 226, 235, ${cloud.alpha.toFixed(2)})`);
+      grad.addColorStop(0.82, `rgba(203, 213, 225, ${(cloud.alpha * 0.65).toFixed(2)})`);
       grad.addColorStop(1, "transparent");
 
       ctx.fillStyle = grad;
       ctx.beginPath();
-
-      // Extremo izquierdo afilado por el viento
       ctx.moveTo(cx - w * 0.5, cy + h * 0.1);
 
-      // Borde superior ondulado orgánico (curvas de estratocúmulo horizontal)
+      // Borde superior ondulado orgánico de estrato invernal
       ctx.quadraticCurveTo(cx - w * 0.35, cy - h * 0.6, cx - w * 0.2, cy - h * 0.4);
       ctx.bezierCurveTo(cx - w * 0.05, cy - h * 0.9, cx + w * 0.15, cy - h * 0.8, cx + w * 0.3, cy - h * 0.3);
       ctx.quadraticCurveTo(cx + w * 0.42, cy - h * 0.1, cx + w * 0.5, cy);
 
-      // Borde inferior alargado y plano con suaves ondas
+      // Borde inferior alargado y plano
       ctx.quadraticCurveTo(cx + w * 0.25, cy + h * 0.45, cx, cy + h * 0.3);
       ctx.quadraticCurveTo(cx - w * 0.25, cy + h * 0.4, cx - w * 0.5, cy + h * 0.1);
 
       ctx.closePath();
       ctx.fill();
 
-      // Filamento secundario rasgado por el viento
-      ctx.fillStyle = `rgba(240, 253, 250, ${(cloud.alpha * 0.4).toFixed(2)})`;
+      // Filamento secundario rasgado con sombra suave gris-fría
+      ctx.fillStyle = `rgba(180, 195, 212, ${(cloud.alpha * 0.45).toFixed(2)})`;
       ctx.beginPath();
       ctx.moveTo(cx - w * 0.3, cy + h * 0.5);
       ctx.quadraticCurveTo(cx, cy + h * 0.7, cx + w * 0.25, cy + h * 0.45);
@@ -658,17 +657,16 @@ export default function AnimatedBackground() {
       ctx.restore();
     };
 
-    // Dibuja el Sol de Invierno Realista (aplanado por refracción atmosférica, con rayos y velo de nubes)
+    // Dibuja el Sol de Invierno Realista
     const drawRealisticWinterSun = () => {
       const sunX = width * 0.82;
       const sunY = 90;
-      // Elipticidad atmosférica invernal (el sol en el horizonte es más ancho que alto)
       const sunRadiusX = 36;
       const sunRadiusY = 29;
 
       ctx.save();
 
-      // 1. Rayos crepusculares suaves proyectados a través del aire frío
+      // Rayos crepusculares suaves
       const numRays = 5;
       for (let i = 0; i < numRays; i++) {
         const rayAngle = Math.PI * 0.35 + (i * 0.18) + Math.sin(clock * 0.2 + i) * 0.03;
@@ -690,7 +688,7 @@ export default function AnimatedBackground() {
         ctx.fill();
       }
 
-      // 2. Halo óptico de 22° y parhelios (sundogs)
+      // Halo óptico de 22° y parhelios
       const haloRadiusX = 92;
       const haloRadiusY = 82;
       ctx.strokeStyle = "rgba(254, 243, 199, 0.24)";
@@ -699,7 +697,6 @@ export default function AnimatedBackground() {
       ctx.ellipse(sunX, sunY, haloRadiusX, haloRadiusY, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Parhelios laterales difusos
       const sundogL = ctx.createRadialGradient(sunX - haloRadiusX, sunY, 0, sunX - haloRadiusX, sunY, 18);
       sundogL.addColorStop(0, "rgba(254, 240, 138, 0.38)");
       sundogL.addColorStop(1, "transparent");
@@ -716,7 +713,7 @@ export default function AnimatedBackground() {
       ctx.arc(sunX + haloRadiusX, sunY, 18, 0, Math.PI * 2);
       ctx.fill();
 
-      // 3. Resplandor atmosférico difuso del sol (sin borde circular duro)
+      // Resplandor difuso del sol
       const sunAtmosphere = ctx.createRadialGradient(
         sunX, sunY, sunRadiusY * 0.3,
         sunX, sunY, sunRadiusX * 3.8
@@ -731,13 +728,13 @@ export default function AnimatedBackground() {
       ctx.ellipse(sunX, sunY, sunRadiusX * 3.8, sunRadiusY * 3.8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Disco brillante aplanado por refracción
+      // Disco aplanado por refracción
       ctx.fillStyle = "rgba(255, 255, 248, 0.98)";
       ctx.beginPath();
       ctx.ellipse(sunX, sunY, sunRadiusX, sunRadiusY, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 5. Franja de bruma / estrato que cruza el sol (rompe el círculo perfecto)
+      // Estrato cruzado
       ctx.fillStyle = "rgba(224, 242, 254, 0.35)";
       ctx.beginPath();
       ctx.moveTo(sunX - sunRadiusX * 1.5, sunY - 4);
@@ -763,7 +760,6 @@ export default function AnimatedBackground() {
         drawAurora();
         drawRealisticMoon();
 
-        // Estrellas
         for (let i = 0; i < stars.length; i++) {
           const st = stars[i];
           const twinkle = (Math.sin(clock * st.twinkleSpeed * 10 + st.phase) + 1) / 2;
@@ -787,7 +783,6 @@ export default function AnimatedBackground() {
           }
         }
 
-        // Estrella fugaz
         shootingStarTimer += 0.016;
         if (shootingStarTimer > 5.5 && !shootingStar.active) {
           shootingStar = {
@@ -830,7 +825,7 @@ export default function AnimatedBackground() {
           drawOrganicPine(distantTrees[i], baseY, "rgba(8, 48, 40, 0.55)", "rgba(20, 110, 92, 0.25)", false, globalWind * 0.4);
         }
 
-        // Bruma intermedia
+        // Bruma
         const midMist = ctx.createLinearGradient(0, baseY - 120, 0, baseY);
         midMist.addColorStop(0, "transparent");
         midMist.addColorStop(0.6, "rgba(6, 38, 32, 0.40)");
@@ -848,7 +843,7 @@ export default function AnimatedBackground() {
           drawOrganicPine(nearTrees[i], baseY, "rgba(8, 52, 44, 0.92)", "rgba(52, 211, 153, 0.45)", false, globalWind);
         }
 
-        // FAROLES EN PRIMER PLANO: ADELANTE DE TODOS LOS ÁRBOLES
+        // FAROLES EN PRIMER PLANO (ADELANTE DE TODOS LOS ÁRBOLES)
         for (const l of lanterns) {
           drawRusticLantern(l, false);
         }
@@ -921,10 +916,10 @@ export default function AnimatedBackground() {
         // ❄️ MODO CLARO: BOSQUE EN INVIERNO (DÍA)
         // ========================================================
 
-        // 1. Sol Realista con halos, rayos y nubes estratificadas orgánicas
+        // 1. Sol Realista
         drawRealisticWinterSun();
 
-        // 2. Nubes nórdicas flotantes (orgánicas y no circulares)
+        // 2. Nubes nórdicas flotantes en gris claro suave (no circulares)
         for (const cloud of winterClouds) {
           cloud.x += cloud.speed;
           if (cloud.x > width + cloud.width) {
@@ -934,23 +929,28 @@ export default function AnimatedBackground() {
           drawOrganicWinterCloud(cloud);
         }
 
-        // 3. Aves invernales volando en formación
+        // 3. Bandada de 7 aves en formación de flecha horizontal hacia la derecha (>)
         for (const bird of winterBirds) {
           bird.x += bird.speed;
-          if (bird.x > width + 60) {
-            bird.x = -60;
+          if (bird.x > width + 100) {
+            bird.x = -100;
           }
-          const wingFlap = Math.sin(clock * 5 + bird.wingPhase) * (bird.size * 0.8);
-          ctx.strokeStyle = "rgba(71, 85, 105, 0.65)";
-          ctx.lineWidth = 1.2;
+
+          // Aleteo de alas horizontales
+          const wingFlap = Math.sin(clock * 6 + bird.wingPhase) * (bird.size * 0.85);
+
+          ctx.strokeStyle = "rgba(71, 85, 105, 0.78)";
+          ctx.lineWidth = 1.3;
           ctx.beginPath();
-          ctx.moveTo(bird.x - bird.size, bird.y - wingFlap);
-          ctx.quadraticCurveTo(bird.x - bird.size * 0.4, bird.y, bird.x, bird.y);
-          ctx.quadraticCurveTo(bird.x + bird.size * 0.4, bird.y, bird.x + bird.size, bird.y - wingFlap);
+          // Ala superior inclinada hacia atrás
+          ctx.moveTo(bird.x - bird.size * 0.9, bird.y - bird.size * 0.8 - wingFlap);
+          ctx.quadraticCurveTo(bird.x - bird.size * 0.2, bird.y - bird.size * 0.15, bird.x, bird.y);
+          // Ala inferior inclinada hacia atrás
+          ctx.quadraticCurveTo(bird.x - bird.size * 0.2, bird.y + bird.size * 0.15, bird.x - bird.size * 0.9, bird.y + bird.size * 0.8 - wingFlap);
           ctx.stroke();
         }
 
-        // 4. Destellos de Diamante (Diamond Dust) en el aire
+        // 4. Destellos de Diamante (Diamond Dust) en azul blanquecino
         for (const crystal of iceCrystals) {
           crystal.y += crystal.vy;
           crystal.glintPhase += crystal.glintSpeed;
@@ -962,12 +962,14 @@ export default function AnimatedBackground() {
           const glint = (Math.sin(crystal.glintPhase) + 1) / 2;
           if (glint > 0.35) {
             const sparkSize = crystal.size * glint * 1.5;
-            ctx.fillStyle = `rgba(255, 255, 255, ${(glint * 0.9).toFixed(2)})`;
+            // Núcleo blanco-azulado
+            ctx.fillStyle = `rgba(186, 230, 253, ${(glint * 0.95).toFixed(2)})`;
             ctx.beginPath();
             ctx.arc(crystal.x, crystal.y, crystal.size * 0.6, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.strokeStyle = `rgba(224, 242, 254, ${(glint * 0.8).toFixed(2)})`;
+            // Destello en cruz en azul hielo
+            ctx.strokeStyle = `rgba(56, 189, 248, ${(glint * 0.85).toFixed(2)})`;
             ctx.lineWidth = 0.8;
             ctx.beginPath();
             ctx.moveTo(crystal.x - sparkSize, crystal.y);
@@ -978,7 +980,7 @@ export default function AnimatedBackground() {
           }
         }
 
-        // 5. Esporas de escarcha / Polvo de nieve en suspensión (partículas diurnas)
+        // 5. Esporas de escarcha / Polvo de nieve en azul blanquecino (alta visibilidad sobre fondo blanco)
         for (const mote of frostMotes) {
           mote.x += mote.vx + Math.sin(clock * mote.swirlSpeed * 10 + mote.swirlOffset) * 0.5 + globalWind * 0.4;
           mote.y += mote.vy;
@@ -988,12 +990,14 @@ export default function AnimatedBackground() {
             mote.x = Math.random() * width;
           }
 
-          ctx.fillStyle = `rgba(204, 251, 241, ${(mote.alpha * 0.6).toFixed(2)})`;
+          // Halo azul hielo
+          ctx.fillStyle = `rgba(56, 189, 248, ${(mote.alpha * 0.38).toFixed(2)})`;
           ctx.beginPath();
-          ctx.arc(mote.x, mote.y, mote.radius * 1.6, 0, Math.PI * 2);
+          ctx.arc(mote.x, mote.y, mote.radius * 1.8, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = `rgba(255, 255, 255, ${mote.alpha.toFixed(2)})`;
+          // Núcleo azul blanquecino
+          ctx.fillStyle = `rgba(186, 230, 253, ${(mote.alpha * 0.9).toFixed(2)})`;
           ctx.beginPath();
           ctx.arc(mote.x, mote.y, mote.radius * 0.8, 0, Math.PI * 2);
           ctx.fill();
@@ -1004,7 +1008,7 @@ export default function AnimatedBackground() {
           drawOrganicPine(distantTrees[i], baseY, "rgba(175, 210, 208, 0.45)", null, false, globalWind * 0.4);
         }
 
-        // 7. Bruma invernal a nivel del suelo
+        // 7. Bruma invernal
         const winterMist = ctx.createLinearGradient(0, baseY - 110, 0, baseY);
         winterMist.addColorStop(0, "transparent");
         winterMist.addColorStop(0.6, "rgba(224, 242, 240, 0.45)");
@@ -1027,7 +1031,7 @@ export default function AnimatedBackground() {
           drawRusticLantern(l, true);
         }
 
-        // 11. Nieve cayendo con viento dinámico y reacción al cursor
+        // 11. Nieve cayendo en AZUL BLANQUECINO (resalta claramente contra el fondo blanco)
         for (let i = 0; i < snowflakes.length; i++) {
           const s = snowflakes[i];
           s.y += s.vy;
@@ -1046,17 +1050,25 @@ export default function AnimatedBackground() {
           if (s.x > width + 20) s.x = -15;
           if (s.x < -20) s.x = width + 15;
 
-          ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha.toFixed(2)})`;
+          // Halo azul hielo
+          if (s.depth === 2) {
+            ctx.fillStyle = `rgba(56, 189, 248, ${(s.alpha * 0.40).toFixed(2)})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius * 2.0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Cuerpo del copo en azul blanquecino (alta visibilidad sobre blanco)
+          ctx.fillStyle = `rgba(186, 230, 253, ${s.alpha.toFixed(2)})`;
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
           ctx.fill();
 
-          if (s.depth === 2) {
-            ctx.fillStyle = `rgba(204, 251, 241, ${(s.alpha * 0.4).toFixed(2)})`;
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, s.radius * 1.8, 0, Math.PI * 2);
-            ctx.fill();
-          }
+          // Núcleo blanco-celeste
+          ctx.fillStyle = `rgba(240, 249, 255, ${(s.alpha * 0.95).toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.radius * 0.55, 0, Math.PI * 2);
+          ctx.fill();
         }
       }
 
