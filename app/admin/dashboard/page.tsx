@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { 
   defaultSocialLinks, 
   defaultCategories, 
@@ -20,7 +21,6 @@ import {
   DriveLinkItem 
 } from "@/types/database";
 import { 
-  Shield, 
   GraduationCap, 
   Compass, 
   Share2, 
@@ -36,7 +36,8 @@ import {
   CheckCircle2,
   FolderOpen,
   Tag,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -44,15 +45,16 @@ import ConfirmModal from "@/components/ConfirmModal";
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"resumen" | "auxiliaturas" | "recomendaciones" | "redes" | "tareas">("resumen");
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Estados de datos
+  // Estados de datos sincronizados con Supabase
   const [auxiliariesList, setAuxiliariesList] = useState<Auxiliary[]>(defaultAuxiliaries);
   const [recommendationsList, setRecommendationsList] = useState<Recommendation[]>(defaultRecommendations);
   const [categoriesList, setCategoriesList] = useState<Category[]>(defaultCategories);
   const [socialLinksList, setSocialLinksList] = useState<SocialLink[]>(defaultSocialLinks);
   const [tasksList, setTasksList] = useState<AdminTask[]>(defaultAdminTasks);
 
-  // Estados de formulario de nueva auxiliatura
+  // Formulario Auxiliatura
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectCode, setNewSubjectCode] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
@@ -63,44 +65,85 @@ export default function AdminDashboardPage() {
     { title: "Carpeta Principal en Google Drive", url: "", type: "general" }
   ]);
 
-  // Estados de formulario de categoría
-  const [newCatName, setNewCatName] = useState("");
-  const [newCatSlug, setNewCatSlug] = useState("");
-  const [newCatDesc, setNewCatDesc] = useState("");
-
-  // Estados de formulario de recomendación
+  // Formulario Recomendación
   const [newRecTitle, setNewRecTitle] = useState("");
   const [newRecDesc, setNewRecDesc] = useState("");
   const [newRecUrl, setNewRecUrl] = useState("");
   const [newRecCategoryId, setNewRecCategoryId] = useState("");
   const [newRecTags, setNewRecTags] = useState("");
+  const [newRecFeatured, setNewRecFeatured] = useState(false);
   const [recUrlError, setRecUrlError] = useState("");
 
-  // Estados de formulario de tarea
+  // Formulario Tarea
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<"baja" | "media" | "alta">("media");
   const [newTaskDueDate, setNewTaskDueDate] = useState("");
 
-  // Estados de formulario de enlace social
+  // Formulario Red Social
   const [newSocialLabel, setNewSocialLabel] = useState("");
   const [newSocialIcon, setNewSocialIcon] = useState("github");
   const [newSocialUrl, setNewSocialUrl] = useState("");
   const [socialUrlError, setSocialUrlError] = useState("");
 
-  // Modal de confirmación para acciones destructivas (Heurística de Nielsen 5: Prevención de errores)
+  // Modal de confirmación
   const [deleteTarget, setDeleteTarget] = useState<{
     type: "aux" | "rec" | "soc" | "task";
     id: string;
     title: string;
   } | null>(null);
 
-  // Mensaje de éxito temporal
+  // Notificación
   const [notification, setNotification] = useState("");
 
   const showNotification = (msg: string) => {
     setNotification(msg);
-    setTimeout(() => setNotification(""), 3000);
+    setTimeout(() => setNotification(""), 3500);
   };
+
+  // 1. Cargar datos reales y verificar sesión en Supabase
+  const loadData = async () => {
+    setIsLoading(true);
+    const supabase = createClient();
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Verificar sesión
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session && process.env.NODE_ENV === "production") {
+        router.push("/admin/login");
+        return;
+      }
+
+      // Cargar todas las tablas en paralelo
+      const [auxRes, catRes, recRes, socRes, taskRes] = await Promise.all([
+        supabase.from("auxiliaries").select("*").order("created_at", { ascending: false }),
+        supabase.from("categories").select("*").order("display_order", { ascending: true }),
+        supabase.from("recommendations").select("*").order("created_at", { ascending: false }),
+        supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+        supabase.from("admin_tasks").select("*").order("created_at", { ascending: false }),
+      ]);
+
+      if (auxRes.data && auxRes.data.length > 0) setAuxiliariesList(auxRes.data as Auxiliary[]);
+      if (catRes.data && catRes.data.length > 0) {
+        setCategoriesList(catRes.data as Category[]);
+        if (!newRecCategoryId) setNewRecCategoryId(catRes.data[0].id);
+      }
+      if (recRes.data && recRes.data.length > 0) setRecommendationsList(recRes.data as Recommendation[]);
+      if (socRes.data && socRes.data.length > 0) setSocialLinksList(socRes.data as SocialLink[]);
+      if (taskRes.data && taskRes.data.length > 0) setTasksList(taskRes.data as AdminTask[]);
+    } catch (err) {
+      console.error("Error al cargar datos desde Supabase:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   // Manejo de Drive Links
   const addDriveLinkField = () => {
@@ -117,13 +160,12 @@ export default function AdminDashboardPage() {
     setDriveLinks(driveLinks.filter((_, i) => i !== index));
   };
 
-  // Guardar Auxiliatura
-  const handleSaveAuxiliary = (e: React.FormEvent) => {
+  // 2. Guardar Auxiliatura en Supabase
+  const handleSaveAuxiliary = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubjectName.trim() || !newSubjectCode.trim() || !newGroupCode.trim()) return;
 
-    const newAux: Auxiliary = {
-      id: "aux-" + Date.now(),
+    const payload = {
       subject_name: newSubjectName.trim(),
       subject_code: newSubjectCode.trim(),
       group_code: newGroupCode.trim(),
@@ -132,130 +174,155 @@ export default function AdminDashboardPage() {
       description: newAuxDescription.trim(),
       drive_links: driveLinks.filter((l) => l.url.trim() !== ""),
       is_active: true,
-      created_at: new Date().toISOString(),
     };
 
-    setAuxiliariesList([newAux, ...auxiliariesList]);
+    const supabase = createClient();
+    if (supabase) {
+      const { data, error } = await supabase.from("auxiliaries").insert(payload).select().single();
+      if (error) {
+        showNotification("Error al guardar en Supabase: " + error.message);
+        return;
+      }
+      if (data) {
+        setAuxiliariesList([data as Auxiliary, ...auxiliariesList]);
+      }
+    } else {
+      const localAux: Auxiliary = {
+        id: "aux-" + Date.now(),
+        ...payload,
+        created_at: new Date().toISOString(),
+      };
+      setAuxiliariesList([localAux, ...auxiliariesList]);
+    }
+
     setNewSubjectName("");
     setNewSubjectCode("");
     setNewGroupCode("");
     setNewSchedule("");
     setNewAuxDescription("");
     setDriveLinks([{ title: "Carpeta Principal en Google Drive", url: "", type: "general" }]);
-    showNotification("Auxiliatura guardada exitosamente");
+    showNotification("Auxiliatura registrada con éxito");
   };
 
-  // Guardar Categoría
-  const handleSaveCategory = (e: React.FormEvent) => {
+  // 3. Guardar Recomendación en Supabase
+  const handleSaveRecommendation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCatName.trim()) return;
-
-    const slug = newCatSlug.trim() || newCatName.toLowerCase().replace(/\s+/g, "-");
-    const newCat: Category = {
-      id: "cat-" + Date.now(),
-      name: newCatName.trim().toUpperCase(),
-      slug,
-      description: newCatDesc.trim(),
-      display_order: categoriesList.length + 1,
-    };
-
-    setCategoriesList([...categoriesList, newCat]);
-    if (!newRecCategoryId) {
-      setNewRecCategoryId(newCat.id);
-    }
-    setNewCatName("");
-    setNewCatSlug("");
-    setNewCatDesc("");
-    showNotification("Categoría agregada correctamente");
-  };
-
-  // Guardar Recomendación con validación estricta de URL
-  const handleSaveRecommendation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newRecTitle.trim() || !newRecUrl.trim()) return;
+    if (!newRecTitle.trim() || !newRecUrl.trim() || !newRecCategoryId) return;
 
     if (!newRecUrl.startsWith("http://") && !newRecUrl.startsWith("https://")) {
-      setRecUrlError("La dirección URL debe comenzar con https:// o http://");
+      setRecUrlError("La URL debe comenzar con http:// o https://");
       return;
     }
     setRecUrlError("");
 
-    const targetCategoryId = newRecCategoryId || categoriesList[0]?.id || "general";
+    const tagsArray = newRecTags.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
 
-    const newRec: Recommendation = {
-      id: "rec-" + Date.now(),
-      category_id: targetCategoryId,
+    const payload = {
+      category_id: newRecCategoryId,
       title: newRecTitle.trim(),
       description: newRecDesc.trim(),
       url: newRecUrl.trim(),
-      tags: newRecTags.split(",").map((t) => t.trim()).filter(Boolean),
-      is_featured: false,
-      created_at: new Date().toISOString(),
+      tags: tagsArray,
+      is_featured: newRecFeatured,
     };
 
-    setRecommendationsList([newRec, ...recommendationsList]);
+    const supabase = createClient();
+    if (supabase) {
+      const { data, error } = await supabase.from("recommendations").insert(payload).select().single();
+      if (error) {
+        showNotification("Error al guardar en Supabase: " + error.message);
+        return;
+      }
+      if (data) {
+        setRecommendationsList([data as Recommendation, ...recommendationsList]);
+      }
+    } else {
+      const localRec: Recommendation = {
+        id: "rec-" + Date.now(),
+        ...payload,
+        created_at: new Date().toISOString(),
+      };
+      setRecommendationsList([localRec, ...recommendationsList]);
+    }
+
     setNewRecTitle("");
     setNewRecDesc("");
     setNewRecUrl("");
     setNewRecTags("");
+    setNewRecFeatured(false);
     showNotification("Recomendación guardada con éxito");
   };
 
-  // Guardar Tarea
-  const handleSaveTask = (e: React.FormEvent) => {
+  // 4. Guardar Tarea en Supabase
+  const handleSaveTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    const newTask: AdminTask = {
-      id: "task-" + Date.now(),
+    const payload = {
       title: newTaskTitle.trim(),
       priority: newTaskPriority,
-      status: "pendiente",
+      status: "pendiente" as const,
       due_date: newTaskDueDate || undefined,
-      created_at: new Date().toISOString(),
     };
 
-    setTasksList([newTask, ...tasksList]);
+    const supabase = createClient();
+    if (supabase) {
+      const { data, error } = await supabase.from("admin_tasks").insert(payload).select().single();
+      if (error) {
+        showNotification("Error al guardar tarea: " + error.message);
+        return;
+      }
+      if (data) {
+        setTasksList([data as AdminTask, ...tasksList]);
+      }
+    } else {
+      const localTask: AdminTask = {
+        id: "task-" + Date.now(),
+        ...payload,
+        created_at: new Date().toISOString(),
+      };
+      setTasksList([localTask, ...tasksList]);
+    }
+
     setNewTaskTitle("");
     setNewTaskDueDate("");
-    showNotification("Tarea agregada a tu lista de pendientes");
+    showNotification("Tarea agregada a tus pendientes");
   };
 
-  // Toggle estado de tarea
-  const toggleTaskStatus = (id: string) => {
+  // 5. Toggle estado de tarea
+  const toggleTaskStatus = async (id: string) => {
+    const currentTask = tasksList.find((t) => t.id === id);
+    if (!currentTask) return;
+
+    const nextStatus =
+      currentTask.status === "pendiente"
+        ? "en_progreso"
+        : currentTask.status === "en_progreso"
+        ? "completada"
+        : "pendiente";
+
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.from("admin_tasks").update({ status: nextStatus }).eq("id", id);
+    }
+
     setTasksList(
-      tasksList.map((t) => {
-        if (t.id === id) {
-          const nextStatus =
-            t.status === "pendiente"
-              ? "en_progreso"
-              : t.status === "en_progreso"
-              ? "completada"
-              : "pendiente";
-          return { ...t, status: nextStatus };
-        }
-        return t;
-      })
+      tasksList.map((t) => (t.id === id ? { ...t, status: nextStatus } : t))
     );
   };
 
-  // Guardar Enlace Social con validación
-  const handleSaveSocialLink = (e: React.FormEvent) => {
+  // 6. Guardar Enlace Social en Supabase
+  const handleSaveSocialLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSocialLabel.trim() || !newSocialUrl.trim()) return;
 
-    if (
-      !newSocialUrl.startsWith("http://") &&
-      !newSocialUrl.startsWith("https://") &&
-      !newSocialUrl.startsWith("mailto:")
-    ) {
+    if (!newSocialUrl.startsWith("http://") && !newSocialUrl.startsWith("https://") && !newSocialUrl.startsWith("mailto:")) {
       setSocialUrlError("El enlace debe ser válido (ej. https://... o mailto:...)");
       return;
     }
     setSocialUrlError("");
 
-    const newLink: SocialLink = {
-      id: "soc-" + Date.now(),
+    const payload = {
       label: newSocialLabel.trim(),
       icon_name: newSocialIcon,
       url: newSocialUrl.trim(),
@@ -263,51 +330,83 @@ export default function AdminDashboardPage() {
       display_order: socialLinksList.length + 1,
     };
 
-    setSocialLinksList([...socialLinksList, newLink]);
+    const supabase = createClient();
+    if (supabase) {
+      const { data, error } = await supabase.from("social_links").insert(payload).select().single();
+      if (error) {
+        showNotification("Error al guardar enlace: " + error.message);
+        return;
+      }
+      if (data) {
+        setSocialLinksList([...socialLinksList, data as SocialLink]);
+      }
+    } else {
+      const localLink: SocialLink = {
+        id: "soc-" + Date.now(),
+        ...payload,
+        created_at: new Date().toISOString(),
+      };
+      setSocialLinksList([...socialLinksList, localLink]);
+    }
+
     setNewSocialLabel("");
     setNewSocialUrl("");
-    showNotification("Perfil de red añadido correctamente");
+    showNotification("Perfil de red guardado");
   };
 
-  // Confirmar eliminación
-  const handleExecuteDelete = () => {
+  // 7. Ejecutar eliminación en Supabase
+  const handleExecuteDelete = async () => {
     if (!deleteTarget) return;
+    const supabase = createClient();
 
     if (deleteTarget.type === "aux") {
+      if (supabase) await supabase.from("auxiliaries").delete().eq("id", deleteTarget.id);
       setAuxiliariesList(auxiliariesList.filter((a) => a.id !== deleteTarget.id));
-      showNotification(`Auxiliatura "${deleteTarget.title}" eliminada`);
+      showNotification(`Auxiliatura eliminada`);
     } else if (deleteTarget.type === "rec") {
+      if (supabase) await supabase.from("recommendations").delete().eq("id", deleteTarget.id);
       setRecommendationsList(recommendationsList.filter((r) => r.id !== deleteTarget.id));
-      showNotification(`Recomendación "${deleteTarget.title}" eliminada`);
+      showNotification(`Recomendación eliminada`);
     } else if (deleteTarget.type === "soc") {
+      if (supabase) await supabase.from("social_links").delete().eq("id", deleteTarget.id);
       setSocialLinksList(socialLinksList.filter((s) => s.id !== deleteTarget.id));
-      showNotification(`Enlace "${deleteTarget.title}" eliminado`);
+      showNotification(`Enlace eliminado`);
     } else if (deleteTarget.type === "task") {
+      if (supabase) await supabase.from("admin_tasks").delete().eq("id", deleteTarget.id);
       setTasksList(tasksList.filter((t) => t.id !== deleteTarget.id));
-      showNotification(`Tarea "${deleteTarget.title}" eliminada`);
+      showNotification(`Tarea eliminada`);
     }
 
     setDeleteTarget(null);
   };
 
+  // Cerrar sesión
+  const handleLogout = async () => {
+    const supabase = createClient();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    router.push("/admin/login");
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-[#060B14] text-slate-800 dark:text-white flex flex-col md:flex-row transition-colors duration-200">
+    <div className="min-h-screen bg-[#f0fdfa] dark:bg-[#061417] text-slate-800 dark:text-emerald-50 flex flex-col md:flex-row transition-colors duration-200">
       {/* Modal de Confirmación */}
       <ConfirmModal
         isOpen={deleteTarget !== null}
         title="¿Confirmar Eliminación?"
-        message={`Estás a punto de eliminar "${deleteTarget?.title}". Esta acción no se puede deshacer.`}
+        message={`Estás a punto de eliminar "${deleteTarget?.title}". Esta acción es irreversible.`}
         confirmLabel="Sí, Eliminar"
         cancelLabel="Cancelar"
         onConfirm={handleExecuteDelete}
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* Sidebar de Navegación del Admin */}
-      <aside className="w-full md:w-64 bg-white dark:bg-[#091222] border-b md:border-b-0 md:border-r border-slate-200 dark:border-blue-950/60 p-5 flex flex-col justify-between flex-shrink-0 shadow-sm">
+      {/* Sidebar de Navegación del Panel */}
+      <aside className="w-full md:w-64 bg-white/90 dark:bg-[#081e19]/90 border-b md:border-b-0 md:border-r border-teal-200/80 dark:border-teal-900/60 p-5 flex flex-col justify-between flex-shrink-0 backdrop-blur-md shadow-sm">
         <div>
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-500/40 p-1 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950 border border-teal-200 dark:border-teal-800 p-1 flex items-center justify-center">
               <Image
                 src="/images/logo_kiris.png"
                 alt="Logo KIRIS"
@@ -317,862 +416,653 @@ export default function AdminDashboardPage() {
               />
             </div>
             <div>
-              <span className="font-black text-slate-900 dark:text-white text-base tracking-wider">KIRIS</span>
-              <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">Panel Admin</p>
+              <span className="font-display font-black text-slate-900 dark:text-white text-base tracking-wider">KIRIS</span>
+              <p className="text-[11px] font-mono text-teal-600 dark:text-teal-400">ADMIN CONTROL</p>
             </div>
-          </div>
-
-          {/* Toggle de Tema en Sidebar */}
-          <div className="mb-6 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Apariencia</span>
-            <ThemeToggle />
           </div>
 
           <nav className="space-y-1.5 text-xs font-semibold">
             <button
               onClick={() => setActiveTab("resumen")}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl transition ${
-                activeTab === "resumen"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
-              }`}
               data-testid="admin-tab-resumen"
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
+                activeTab === "resumen"
+                  ? "bg-teal-600 text-white font-bold shadow-sm"
+                  : "text-slate-600 dark:text-teal-200/70 hover:bg-teal-50 dark:hover:bg-teal-950/60"
+              }`}
             >
-              <Shield className="w-4 h-4" />
+              <Home className="w-4 h-4" />
               <span>Resumen General</span>
             </button>
 
             <button
               onClick={() => setActiveTab("auxiliaturas")}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl transition ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
                 activeTab === "auxiliaturas"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
+                  ? "bg-teal-600 text-white font-bold shadow-sm"
+                  : "text-slate-600 dark:text-teal-200/70 hover:bg-teal-50 dark:hover:bg-teal-950/60"
               }`}
-              data-testid="admin-tab-auxiliaturas"
             >
               <GraduationCap className="w-4 h-4" />
-              <span>Auxiliaturas (Drive)</span>
+              <span>Auxiliaturas ({auxiliariesList.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab("recomendaciones")}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl transition ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
                 activeTab === "recomendaciones"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
+                  ? "bg-teal-600 text-white font-bold shadow-sm"
+                  : "text-slate-600 dark:text-teal-200/70 hover:bg-teal-50 dark:hover:bg-teal-950/60"
               }`}
-              data-testid="admin-tab-recomendaciones"
             >
               <Compass className="w-4 h-4" />
-              <span>Recomendaciones</span>
+              <span>Recursos ({recommendationsList.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab("redes")}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl transition ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
                 activeTab === "redes"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
+                  ? "bg-teal-600 text-white font-bold shadow-sm"
+                  : "text-slate-600 dark:text-teal-200/70 hover:bg-teal-50 dark:hover:bg-teal-950/60"
               }`}
-              data-testid="admin-tab-redes"
             >
               <Share2 className="w-4 h-4" />
-              <span>Perfiles & Redes</span>
+              <span>Redes Sociales ({socialLinksList.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab("tareas")}
-              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl transition ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition ${
                 activeTab === "tareas"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900"
+                  ? "bg-teal-600 text-white font-bold shadow-sm"
+                  : "text-slate-600 dark:text-teal-200/70 hover:bg-teal-50 dark:hover:bg-teal-950/60"
               }`}
-              data-testid="admin-tab-tareas"
             >
               <CheckSquare className="w-4 h-4" />
-              <span>Mis Tareas (To-Do)</span>
+              <span>Tareas Pendientes ({tasksList.filter(t => t.status !== "completada").length})</span>
             </button>
           </nav>
         </div>
 
-        <div className="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-2 mt-6 md:mt-0">
+        {/* Acciones inferiores */}
+        <div className="pt-4 border-t border-teal-100 dark:border-teal-900/60 space-y-2 text-xs">
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[11px] font-mono text-slate-500">TEMA</span>
+            <ThemeToggle />
+          </div>
+
           <Link
             href="/"
-            className="flex items-center gap-2 w-full px-3.5 py-2 rounded-xl text-xs text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-600 dark:text-teal-200 hover:bg-teal-50 dark:hover:bg-teal-950/60 transition"
           >
-            <Home className="w-4 h-4" />
-            <span>Ver Sitio Web Público</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Ver Portal Público</span>
           </Link>
+
           <button
-            onClick={() => router.push("/admin/login")}
-            className="flex items-center gap-2 w-full px-3.5 py-2 rounded-xl text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition font-semibold"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
             <span>Cerrar Sesión</span>
           </button>
         </div>
       </aside>
 
-      {/* Área de Contenido Principal */}
-      <main className="flex-1 p-6 sm:p-8 lg:p-10 overflow-y-auto">
+      {/* Contenido Principal del Panel */}
+      <main className="flex-1 p-6 sm:p-8 max-w-6xl mx-auto overflow-y-auto">
+        {/* Notificación flotante */}
         {notification && (
-          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-emerald-600 text-white dark:bg-emerald-950 dark:border dark:border-emerald-500/40 dark:text-emerald-200 text-xs shadow-2xl flex items-center gap-2 transition-all duration-300 ease-out">
-            <CheckCircle2 className="w-4 h-4 text-white dark:text-emerald-400" />
+          <div className="fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl bg-teal-600 text-white text-xs font-bold shadow-xl animate-fade-in">
+            <CheckCircle2 className="w-4 h-4" />
             <span>{notification}</span>
           </div>
         )}
 
-        {/* TAB 1: RESUMEN GENERAL */}
+        {/* ========================================================
+            TAB: RESUMEN GENERAL
+        ======================================================== */}
         {activeTab === "resumen" && (
-          <div className="space-y-8">
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">Panel de Administración • KIRIS</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                Bienvenido Marco. Administra materias, enlaces a Drive, recomendaciones y tareas sin tocar código.
-              </p>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-teal-200/80 dark:border-teal-900/60">
+              <div>
+                <h1 className="text-2xl font-display font-black text-slate-900 dark:text-white">Panel de Administración</h1>
+                <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">
+                  Gestiona las materias de auxiliatura, recursos de IA y configuración de Supabase.
+                </p>
+              </div>
+              <button
+                onClick={loadData}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-50 hover:bg-teal-100 dark:bg-teal-950 dark:hover:bg-teal-900 text-teal-800 dark:text-teal-200 border border-teal-200 dark:border-teal-800 transition"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+                <span>Actualizar</span>
+              </button>
             </div>
 
             {/* Tarjetas de Métricas */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 shadow-sm">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Auxiliaturas Activas</span>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{auxiliariesList.length}</p>
-                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">UAGRM FICCT</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm">
+                <span className="text-[11px] font-mono text-slate-500 uppercase">Auxiliaturas</span>
+                <p className="text-3xl font-display font-black text-teal-600 dark:text-teal-300 mt-1">{auxiliariesList.length}</p>
               </div>
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 shadow-sm">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Recomendaciones</span>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{recommendationsList.length}</p>
-                <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-semibold">{categoriesList.length} categorías</span>
+
+              <div className="p-5 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm">
+                <span className="text-[11px] font-mono text-slate-500 uppercase">Recursos</span>
+                <p className="text-3xl font-display font-black text-emerald-600 dark:text-emerald-300 mt-1">{recommendationsList.length}</p>
               </div>
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 shadow-sm">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Perfiles Conectados</span>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{socialLinksList.length}</p>
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">GitHub, AWS, etc.</span>
+
+              <div className="p-5 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm">
+                <span className="text-[11px] font-mono text-slate-500 uppercase">Redes Activas</span>
+                <p className="text-3xl font-display font-black text-cyan-600 dark:text-cyan-300 mt-1">{socialLinksList.length}</p>
               </div>
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 shadow-sm">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Tareas Pendientes</span>
-                <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-                  {tasksList.filter((t) => t.status !== "completada").length}
+
+              <div className="p-5 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm">
+                <span className="text-[11px] font-mono text-slate-500 uppercase">Pendientes</span>
+                <p className="text-3xl font-display font-black text-amber-500 mt-1">
+                  {tasksList.filter(t => t.status !== "completada").length}
                 </p>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">En seguimiento</span>
               </div>
             </div>
 
-            {/* Accesos Directos */}
-            <div className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Acciones Rápidas</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Accesos rápidos */}
+            <div className="p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Acciones Rápidas</h2>
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => setActiveTab("auxiliaturas")}
-                  className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 hover:bg-blue-50 dark:hover:bg-blue-950/60 border border-slate-200 dark:border-slate-800 text-left transition"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-1.5"
                 >
-                  <GraduationCap className="w-5 h-5 text-blue-600 dark:text-blue-400 mb-2" />
-                  <span className="block text-xs font-bold text-slate-900 dark:text-white">Nueva Auxiliatura</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Agregar materia y links Drive</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Registrar Nueva Auxiliatura</span>
                 </button>
                 <button
                   onClick={() => setActiveTab("recomendaciones")}
-                  className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 hover:bg-cyan-50 dark:hover:bg-blue-950/60 border border-slate-200 dark:border-slate-800 text-left transition"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5"
                 >
-                  <Compass className="w-5 h-5 text-cyan-600 dark:text-cyan-400 mb-2" />
-                  <span className="block text-xs font-bold text-slate-900 dark:text-white">Nueva Recomendación</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Subir canal de YouTube o recurso</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab("tareas")}
-                  className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 hover:bg-emerald-50 dark:hover:bg-blue-950/60 border border-slate-200 dark:border-slate-800 text-left transition"
-                >
-                  <CheckSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mb-2" />
-                  <span className="block text-xs font-bold text-slate-900 dark:text-white">Anotar Tarea</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Gestionar pendientes académicos</span>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Publicar Nuevo Recurso</span>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: AUXILIATURAS Y DRIVE */}
+        {/* ========================================================
+            TAB: AUXILIATURAS (CRUD COMPLETO)
+        ======================================================== */}
         {activeTab === "auxiliaturas" && (
           <div className="space-y-8">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">Gestión de Auxiliaturas Universitarias</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                Registra materias por Sigla y Grupo con enlaces configurables a Google Drive.
+              <h1 className="text-2xl font-display font-black text-slate-900 dark:text-white">Gestión de Auxiliaturas</h1>
+              <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">
+                Registra materias, códigos de grupo y enlaces a las carpetas en Google Drive.
               </p>
             </div>
 
-            {/* Formulario de Nueva Auxiliatura */}
-            <form onSubmit={handleSaveAuxiliary} className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                Registrar Nueva Auxiliatura
+            {/* Formulario de Registro */}
+            <form onSubmit={handleSaveAuxiliary} className="p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm space-y-4">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-teal-600" />
+                <span>Nueva Auxiliatura</span>
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Materia *</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Nombre de la Materia *</label>
                   <input
                     type="text"
                     required
+                    data-testid="admin-subject-name"
                     placeholder="Ej. Estructuras de Datos I"
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-subject-name"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Sigla de Materia *</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Sigla / Código *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ej. INF-220"
                     value={newSubjectCode}
                     onChange={(e) => setNewSubjectCode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-subject-code"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Grupo *</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Grupo *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej. SA"
+                    placeholder="Ej. SA o SB"
                     value={newGroupCode}
                     onChange={(e) => setNewGroupCode(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-group-code"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Horarios de Auxiliatura</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Horario de Auxiliatura</label>
                   <input
                     type="text"
-                    placeholder="Ej. Martes y Jueves 14:00 - 16:00"
+                    placeholder="Ej. Mar/Jue 14:00 - 16:00"
                     value={newSchedule}
                     onChange={(e) => setNewSchedule(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Semestre / Gestión</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Semestre</label>
                   <input
                     type="text"
-                    placeholder="II-2026"
+                    placeholder="Ej. II-2026"
                     value={newSemester}
                     onChange={(e) => setNewSemester(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción de la Materia</label>
+                <label className="block text-[11px] font-mono text-slate-500 mb-1">Descripción / Indicaciones</label>
                 <textarea
                   rows={2}
-                  placeholder="Enfoque de la auxiliatura, temas que se avanzarán, etc."
+                  placeholder="Detalles sobre el avance o requisitos de la auxiliatura..."
                   value={newAuxDescription}
                   onChange={(e) => setNewAuxDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                 />
               </div>
 
-              {/* Sección de Múltiples Links de Google Drive */}
+              {/* Enlaces a Drive */}
               <div className="pt-2">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <FolderOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    Enlaces de Google Drive
-                  </span>
-                  <button
-                    type="button"
-                    onClick={addDriveLinkField}
-                    className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Otro Enlace</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
+                <label className="block text-[11px] font-mono text-slate-500 mb-2">Enlaces a Google Drive</label>
+                <div className="space-y-2">
                   {driveLinks.map((link, idx) => (
-                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div key={idx} className="flex gap-2 items-center">
                       <input
                         type="text"
-                        placeholder="Título del enlace (Ej. Grabaciones de Clases)"
+                        placeholder="Título del enlace (Ej. Carpeta de Prácticas)"
                         value={link.title}
                         onChange={(e) => updateDriveLink(idx, "title", e.target.value)}
-                        className="w-full sm:w-1/3 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                        className="flex-1 px-3 py-1.5 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
                       />
                       <input
                         type="url"
-                        placeholder="https://drive.google.com/..."
+                        placeholder="URL de Google Drive (https://drive.google.com/...)"
                         value={link.url}
                         onChange={(e) => updateDriveLink(idx, "url", e.target.value)}
-                        className="w-full sm:w-1/2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                        className="flex-2 px-3 py-1.5 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
                       />
-                      <select
-                        value={link.type}
-                        onChange={(e) => updateDriveLink(idx, "type", e.target.value)}
-                        className="w-full sm:w-1/6 px-2 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
-                      >
-                        <option value="general">Carpeta General</option>
-                        <option value="clases">Grabaciones</option>
-                        <option value="practicas">Prácticas</option>
-                        <option value="guias">Guías / PDF</option>
-                      </select>
                       {driveLinks.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeDriveLink(idx)}
-                          className="p-2 text-red-500 hover:text-red-700"
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
+                <button
+                  type="button"
+                  onClick={addDriveLinkField}
+                  className="mt-2 text-xs font-semibold text-teal-600 hover:underline inline-flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Agregar otro enlace de Drive</span>
+                </button>
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2"
                   data-testid="admin-save-aux-btn"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-2"
                 >
-                  <Save className="w-4 h-4" />
-                  Guardar Auxiliatura
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Guardar Auxiliatura</span>
                 </button>
               </div>
             </form>
 
-            {/* Listado de Auxiliaturas */}
-            <div className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">
-                Auxiliaturas Registradas ({auxiliariesList.length})
-              </h2>
-              {auxiliariesList.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 dark:text-slate-400 text-xs">
-                  No hay auxiliaturas registradas todavía. Completa el formulario de arriba para publicar la primera.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {auxiliariesList.map((aux) => (
-                    <div key={aux.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 text-xs font-bold">
-                            {aux.subject_code}
-                          </span>
-                          <span className="px-2 py-0.5 rounded bg-cyan-100 dark:bg-cyan-600/20 text-cyan-700 dark:text-cyan-400 text-xs font-bold">
-                            Grupo {aux.group_code}
-                          </span>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white">{aux.subject_name}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{aux.schedule} • {aux.semester}</p>
-                        <span className="text-[11px] text-blue-600 dark:text-blue-400 font-mono mt-1 block">
-                          {aux.drive_links?.length || 0} enlace(s) a Google Drive
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setDeleteTarget({
-                            type: "aux",
-                            id: aux.id,
-                            title: `${aux.subject_name} (${aux.subject_code} - Grupo ${aux.group_code})`,
-                          });
-                        }}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40 text-xs transition"
-                        title="Eliminar auxiliatura con confirmación"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+            {/* Listado Actual */}
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Auxiliaturas Registradas ({auxiliariesList.length})</h2>
+              {auxiliariesList.map((aux) => (
+                <div key={aux.id} className="p-4 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] flex items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-teal-50 dark:bg-teal-950 text-teal-800 dark:text-teal-300">
+                        {aux.subject_code}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500">Grupo {aux.group_code}</span>
                     </div>
-                  ))}
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-1">{aux.subject_name}</h3>
+                    {aux.schedule && <p className="text-xs text-slate-500 mt-0.5">{aux.schedule}</p>}
+                  </div>
+                  <button
+                    onClick={() => setDeleteTarget({ type: "aux", id: aux.id, title: aux.subject_name })}
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         )}
 
-        {/* TAB 3: RECOMENDACIONES Y CATEGORÍAS */}
+        {/* ========================================================
+            TAB: RECOMENDACIONES (CRUD COMPLETO)
+        ======================================================== */}
         {activeTab === "recomendaciones" && (
           <div className="space-y-8">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">Gestión de Recomendaciones & Categorías</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                Añade canales de YouTube, herramientas web y crea nuevas categorías dinámicamente.
+              <h1 className="text-2xl font-display font-black text-slate-900 dark:text-white">Gestión de Recursos &amp; IA</h1>
+              <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">
+                Publica herramientas web, canales y librerías recomendadas.
               </p>
             </div>
 
-            {/* Formulario de Nueva Categoría */}
-            <form onSubmit={handleSaveCategory} className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                Crear Nueva Categoría
+            {/* Formulario */}
+            <form onSubmit={handleSaveRecommendation} className="p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm space-y-4">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-emerald-600" />
+                <span>Nuevo Recurso</span>
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre de la Categoría *</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Título del Recurso *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej. WEB, CLASES, YOUTUBE o IA"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-cat-name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Identificador Slug (opcional)</label>
-                  <input
-                    type="text"
-                    placeholder="web, youtube, etc."
-                    value={newCatSlug}
-                    onChange={(e) => setNewCatSlug(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción Breve</label>
-                  <input
-                    type="text"
-                    placeholder="Descripción de la categoría..."
-                    value={newCatDesc}
-                    onChange={(e) => setNewCatDesc(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="px-5 py-2 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5"
-                data-testid="admin-save-cat-btn"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Agregar Categoría
-              </button>
-            </form>
-
-            {/* Formulario de Recomendación */}
-            <form onSubmit={handleSaveRecommendation} className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                Nueva Recomendación
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título del Recurso *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. DotCSV - Inteligencia Artificial"
+                    placeholder="Ej. Hugging Face Spaces"
                     value={newRecTitle}
                     onChange={(e) => setNewRecTitle(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-rec-title"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Categoría</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Categoría *</label>
                   <select
                     value={newRecCategoryId}
                     onChange={(e) => setNewRecCategoryId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-rec-cat"
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   >
-                    {categoriesList.length === 0 ? (
-                      <option value="">(Sin categorías creadas aún - escribe arriba)</option>
-                    ) : (
-                      categoriesList.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))
-                    )}
+                    {categoriesList.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Enlace URL del Recurso *</label>
+                <label className="block text-[11px] font-mono text-slate-500 mb-1">URL de Destino *</label>
                 <input
                   type="url"
                   required
                   placeholder="https://..."
                   value={newRecUrl}
-                  onChange={(e) => {
-                    setNewRecUrl(e.target.value);
-                    if (recUrlError) setRecUrlError("");
-                  }}
-                  className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border text-xs text-slate-900 dark:text-white focus:outline-none ${
-                    recUrlError
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                  }`}
-                  data-testid="admin-rec-url"
+                  onChange={(e) => setNewRecUrl(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                 />
-                {recUrlError && (
-                  <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    <span>{recUrlError}</span>
-                  </p>
-                )}
+                {recUrlError && <p className="text-[11px] text-rose-500 mt-1">{recUrlError}</p>}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Descripción Breve</label>
+                <label className="block text-[11px] font-mono text-slate-500 mb-1">Descripción</label>
                 <textarea
                   rows={2}
-                  placeholder="Por qué lo recomiendas y qué aprenderán en este recurso..."
+                  placeholder="Breve reseña sobre la utilidad de este recurso..."
                   value={newRecDesc}
                   onChange={(e) => setNewRecDesc(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Etiquetas (separadas por coma)</label>
-                <input
-                  type="text"
-                  placeholder="IA, Redes Neuronales, Next.js"
-                  value={newRecTags}
-                  onChange={(e) => setNewRecTags(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-700 text-white shadow-md shadow-cyan-600/20 flex items-center gap-2"
-                  data-testid="admin-save-rec-btn"
-                >
-                  <Save className="w-4 h-4" />
-                  Guardar Recomendación
-                </button>
-              </div>
-            </form>
-
-            {/* Listado de Recomendaciones */}
-            <div className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">
-                Recomendaciones Activas ({recommendationsList.length})
-              </h2>
-              {recommendationsList.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 dark:text-slate-400 text-xs">
-                  No hay recomendaciones registradas todavía. Crea categorías y agrega tus recursos arriba.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recommendationsList.map((rec) => (
-                    <div key={rec.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
-                      <div>
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">{rec.title}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{rec.description}</p>
-                        <a href={rec.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-1">
-                          <span>{rec.url}</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setDeleteTarget({
-                            type: "rec",
-                            id: rec.id,
-                            title: rec.title,
-                          });
-                        }}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs transition"
-                        title="Eliminar recomendación con confirmación"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: REDES SOCIALES Y PERFILES */}
-        {activeTab === "redes" && (
-          <div className="space-y-8">
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">Gestión de Perfiles y Redes Sociales</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                Añade o edita los botones del landing (GitHub, AWS, WhatsApp, Facebook, LinkedIn, etc.) sin tocar código.
-              </p>
-            </div>
-
-            {/* Formulario */}
-            <form onSubmit={handleSaveSocialLink} className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                Agregar Nuevo Perfil
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nombre / Etiqueta *</label>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Etiquetas (separadas por coma)</label>
                   <input
                     type="text"
-                    required
-                    placeholder="Ej. AWS Cloud o Facebook"
-                    value={newSocialLabel}
-                    onChange={(e) => setNewSocialLabel(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-social-label"
+                    placeholder="IA, LLM, Python"
+                    value={newRecTags}
+                    onChange={(e) => setNewRecTags(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs focus:outline-none focus:border-teal-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tipo de Icono</label>
-                  <select
-                    value={newSocialIcon}
-                    onChange={(e) => setNewSocialIcon(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="github">GitHub</option>
-                    <option value="mail">Correo / Email</option>
-                    <option value="whatsapp">WhatsApp</option>
-                    <option value="aws">AWS</option>
-                    <option value="globe">Enlace Web General</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Enlace URL *</label>
+
+                <div className="flex items-center gap-2 pt-4">
                   <input
-                    type="text"
-                    required
-                    placeholder="https://..."
-                    value={newSocialUrl}
-                    onChange={(e) => {
-                      setNewSocialUrl(e.target.value);
-                      if (socialUrlError) setSocialUrlError("");
-                    }}
-                    className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border text-xs text-slate-900 dark:text-white focus:outline-none ${
-                      socialUrlError
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-slate-200 dark:border-slate-700 focus:border-blue-500"
-                    }`}
-                    data-testid="admin-social-url"
+                    type="checkbox"
+                    id="recFeatured"
+                    checked={newRecFeatured}
+                    onChange={(e) => setNewRecFeatured(e.target.checked)}
+                    className="rounded text-teal-600 focus:ring-teal-500"
                   />
-                  {socialUrlError && (
-                    <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      <span>{socialUrlError}</span>
-                    </p>
-                  )}
+                  <label htmlFor="recFeatured" className="text-xs font-semibold text-slate-700 dark:text-teal-200">
+                    Marcar como Destacado ⭐
+                  </label>
                 </div>
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 flex items-center gap-2"
-                  data-testid="admin-save-social-btn"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-2"
                 >
-                  <Save className="w-4 h-4" />
-                  Agregar Enlace
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Publicar Recurso</span>
                 </button>
               </div>
             </form>
 
             {/* Listado */}
-            <div className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">Perfiles Configurables</h2>
-              {socialLinksList.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 dark:text-slate-400 text-xs">
-                  No hay perfiles ni redes registrados todavía. Agrega tus cuentas de GitHub, AWS, etc., en el formulario de arriba.
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Recursos Publicados ({recommendationsList.length})</h2>
+              {recommendationsList.map((rec) => (
+                <div key={rec.id} className="p-4 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{rec.title}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{rec.description}</p>
+                    <a href={rec.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-teal-600 hover:underline mt-1 inline-flex items-center gap-1">
+                      <span>{rec.url}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                  <button
+                    onClick={() => setDeleteTarget({ type: "rec", id: rec.id, title: rec.title })}
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {socialLinksList.map((soc) => (
-                    <div key={soc.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
-                      <div>
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">{soc.label}</span>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{soc.url}</p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setDeleteTarget({
-                            type: "soc",
-                            id: soc.id,
-                            title: soc.label,
-                          });
-                        }}
-                        className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 text-xs transition"
-                        title="Eliminar enlace con confirmación"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
           </div>
         )}
 
-        {/* TAB 5: MIS TAREAS DEL ADMINISTRADOR */}
-        {activeTab === "tareas" && (
+        {/* ========================================================
+            TAB: REDES SOCIALES
+        ======================================================== */}
+        {activeTab === "redes" && (
           <div className="space-y-8">
             <div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white">Gestor de Tareas del Administrador</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                Organiza tus notas, pendientes y actividades de auxiliaturas de forma privada.
+              <h1 className="text-2xl font-display font-black text-slate-900 dark:text-white">Redes Sociales &amp; Contacto</h1>
+              <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">
+                Gestiona los enlaces de contacto que aparecen en tu página de Sobre Mí.
               </p>
             </div>
 
-            {/* Formulario */}
-            <form onSubmit={handleSaveTask} className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                Nueva Tarea
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div className="sm:col-span-6">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Título de la Tarea *</label>
+            <form onSubmit={handleSaveSocialLink} className="p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Nombre / Etiqueta *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej. Calificar prácticas de INF-220 Grupo SA"
-                    value={newTaskTitle}
-                    onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                    data-testid="admin-task-title"
+                    placeholder="Ej. GitHub"
+                    value={newSocialLabel}
+                    onChange={(e) => setNewSocialLabel(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
                   />
                 </div>
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Prioridad</label>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">Ícono</label>
                   <select
-                    value={newTaskPriority}
-                    onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    value={newSocialIcon}
+                    onChange={(e) => setNewSocialIcon(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
                   >
-                    <option value="alta">Alta</option>
-                    <option value="media">Media</option>
-                    <option value="baja">Baja</option>
+                    <option value="github">GitHub</option>
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="mail">Correo Electrónico</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="globe">Sitio Web</option>
                   </select>
                 </div>
-                <div className="sm:col-span-3">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Fecha Límite</label>
+
+                <div>
+                  <label className="block text-[11px] font-mono text-slate-500 mb-1">URL / Enlace *</label>
                   <input
-                    type="date"
-                    value={newTaskDueDate}
-                    onChange={(e) => setNewTaskDueDate(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    type="text"
+                    required
+                    placeholder="https://..."
+                    value={newSocialUrl}
+                    onChange={(e) => setNewSocialUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
                   />
+                  {socialUrlError && <p className="text-[11px] text-rose-500 mt-1">{socialUrlError}</p>}
                 </div>
               </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20 flex items-center gap-2"
-                  data-testid="admin-save-task-btn"
-                >
-                  <Save className="w-4 h-4" />
-                  Agregar Tarea
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center gap-2"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Guardar Perfil de Red</span>
+              </button>
             </form>
 
-            {/* Lista de Tareas */}
-            <div className="bg-white dark:bg-[#0B1528] border border-slate-200 dark:border-blue-900/40 rounded-3xl p-6 sm:p-8 shadow-sm">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">
-                Lista de Tareas ({tasksList.length})
-              </h2>
-              {tasksList.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 dark:text-slate-400 text-xs">
-                  No hay tareas registradas todavía. Agrega tus pendientes y fechas límites arriba.
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Perfiles Configurados ({socialLinksList.length})</h2>
+              {socialLinksList.map((soc) => (
+                <div key={soc.id} className="p-4 rounded-2xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-xs text-slate-900 dark:text-white">{soc.label}</span>
+                    <p className="text-xs text-slate-500">{soc.url}</p>
+                  </div>
+                  <button
+                    onClick={() => setDeleteTarget({ type: "soc", id: soc.id, title: soc.label })}
+                    className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {tasksList.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`p-4 rounded-2xl border transition flex items-center justify-between gap-4 ${
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            TAB: TAREAS PENDIENTES
+        ======================================================== */}
+        {activeTab === "tareas" && (
+          <div className="space-y-8">
+            <div>
+              <h1 className="text-2xl font-display font-black text-slate-900 dark:text-white">Lista de Tareas Administrativas</h1>
+              <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-1">
+                Seguimiento privado de pendientes de auxiliatura y desarrollo.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveTask} className="p-6 rounded-3xl border border-teal-200/80 dark:border-teal-900/60 bg-white dark:bg-[#081e19] shadow-sm flex flex-col sm:flex-row gap-3 items-end">
+              <div className="flex-1 w-full">
+                <label className="block text-[11px] font-mono text-slate-500 mb-1">Título de la Tarea *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Subir notas del 1er parcial de INF-220..."
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
+                />
+              </div>
+
+              <div className="w-full sm:w-36">
+                <label className="block text-[11px] font-mono text-slate-500 mb-1">Prioridad</label>
+                <select
+                  value={newTaskPriority}
+                  onChange={(e) => setNewTaskPriority(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-xs"
+                >
+                  <option value="baja">Baja</option>
+                  <option value="media">Media</option>
+                  <option value="alta">Alta</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white transition flex items-center justify-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agregar</span>
+              </button>
+            </form>
+
+            <div className="space-y-2">
+              {tasksList.map((task) => (
+                <div
+                  key={task.id}
+                  className={`p-4 rounded-2xl border transition flex items-center justify-between gap-3 ${
+                    task.status === "completada"
+                      ? "bg-slate-50 dark:bg-[#071916]/50 border-slate-200 dark:border-teal-950 opacity-60"
+                      : "bg-white dark:bg-[#081e19] border-teal-200/80 dark:border-teal-900/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => toggleTaskStatus(task.id)}
+                      className={`w-5 h-5 rounded-lg border flex items-center justify-center transition ${
                         task.status === "completada"
-                          ? "bg-slate-100 dark:bg-slate-950/60 border-slate-200 dark:border-slate-900 opacity-60"
-                          : "bg-slate-50 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800"
+                          ? "bg-teal-600 border-teal-600 text-white"
+                          : "border-teal-400 dark:border-teal-700"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => toggleTaskStatus(task.id)}
-                          className={`w-5 h-5 rounded-lg border flex items-center justify-center transition ${
-                            task.status === "completada"
-                              ? "bg-emerald-600 border-emerald-500 text-white"
-                              : task.status === "en_progreso"
-                              ? "bg-amber-500 text-white border-amber-500"
-                              : "border-slate-300 dark:border-slate-600 hover:border-blue-500"
-                          }`}
-                          aria-label={`Cambiar estado de tarea ${task.title}`}
-                        >
-                          {task.status === "completada" && <CheckSquare className="w-3.5 h-3.5" />}
-                          {task.status === "en_progreso" && <Clock className="w-3.5 h-3.5" />}
-                        </button>
-                        <div>
-                          <span
-                            className={`text-xs font-bold block ${
-                              task.status === "completada" ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-900 dark:text-white"
-                            }`}
-                          >
-                            {task.title}
-                          </span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span
-                              className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
-                                task.priority === "alta"
-                                  ? "bg-red-50 text-red-700 dark:bg-red-500/20 dark:text-red-400"
-                                  : task.priority === "media"
-                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400"
-                                  : "bg-blue-50 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"
-                              }`}
-                            >
-                              Prioridad {task.priority}
-                            </span>
-                            {task.due_date && (
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 font-mono">
-                                <Calendar className="w-3 h-3 text-slate-400" />
-                                {task.due_date}
-                              </span>
-                            )}
-                            <span className="text-[10px] text-slate-500 font-mono">
-                              Estado: {task.status.replace("_", " ")}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      {task.status === "completada" && <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </button>
+                    <span className={`text-xs font-semibold ${task.status === "completada" ? "line-through text-slate-400" : "text-slate-900 dark:text-white"}`}>
+                      {task.title}
+                    </span>
+                  </div>
 
-                      <button
-                        onClick={() => {
-                          setDeleteTarget({
-                            type: "task",
-                            id: task.id,
-                            title: task.title,
-                          });
-                        }}
-                        className="p-2 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 text-xs transition"
-                        title="Eliminar tarea con confirmación"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                  <button
+                    onClick={() => setDeleteTarget({ type: "task", id: task.id, title: task.title })}
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         )}
