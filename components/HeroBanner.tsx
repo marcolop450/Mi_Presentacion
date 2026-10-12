@@ -22,12 +22,6 @@ export default function HeroBanner() {
           </div>
         </div>
 
-        {/* Institution Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-teal-950/70 border border-slate-300 dark:border-teal-800/80 text-teal-800 dark:text-teal-200 text-xs font-mono font-semibold mb-5 shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>FICCT // UAGRM • SANTA CRUZ, BOLIVIA</span>
-        </div>
-
         {/* Brand Name */}
         <h1 className="font-display font-black tracking-tight text-5xl sm:text-6xl md:text-7xl text-slate-900 dark:text-white leading-none">
           KIRIS
@@ -35,12 +29,13 @@ export default function HeroBanner() {
 
         {/* Official Slogan (Pure Typography - Never Crops or Blurs) */}
         <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl font-display font-bold text-teal-700 dark:text-teal-300 max-w-[36ch] leading-snug">
-          Innovación en Razonamiento e Inteligencia de Sistemas
+          <strong>I</strong>nnovación en <strong>R</strong>azonamiento e <br></br><strong>I</strong>nteligencia de <strong>S</strong>istemas
         </h2>
+        
 
         {/* Subtitle */}
         <p className="mt-4 text-sm sm:text-base text-slate-600 dark:text-teal-100/80 leading-relaxed max-w-[62ch]">
-          Plataforma académica y repositorio universitario de auxiliaturas, carpetas organizadas en Google Drive y recursos de inteligencia artificial curados por <strong>Marco Alejandro Lopez Velasquez</strong>.
+          Plataforma académica y repositorio universitario de auxiliaturas, carpetas organizadas en Google Drive y recursos de programacion por <br></br><strong>Marco Alejandro Lopez Velasquez</strong>.
         </p>
 
         {/* Action Buttons */}
@@ -59,7 +54,7 @@ export default function HeroBanner() {
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-sm border border-slate-300 dark:border-teal-800/80 bg-white/90 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-900/50 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xs"
           >
             <Compass className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-            <span>Ver Recursos &amp; IA</span>
+            <span>Ver Recursos &amp; Mas</span>
           </Link>
         </div>
       </div>

@@ -160,7 +160,7 @@ export default function AuxiliariesAdminPage() {
     <div className="space-y-6 animate-in fade-in duration-200">
       <AdminPageHeader
         title="Gestión de Auxiliaturas Universitarias"
-        description="Asigna materias a grupos específicos (SA, SB) y vincula sus carpetas oficiales de Google Drive."
+        description="Asigna materias a grupos específicos y vincula sus carpetas oficiales de Google Drive."
         actionLabel="Asignar Grupo"
         onAction={openCreateModal}
       />
@@ -171,7 +171,7 @@ export default function AuxiliariesAdminPage() {
           <Search className="w-4 h-4 text-slate-400 dark:text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Buscar por materia, código (ej. INF-220), grupo o descripción..."
+            placeholder="Buscar por materia, código, grupo o descripción..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);

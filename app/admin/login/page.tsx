@@ -93,11 +93,6 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-teal-950/70 border border-slate-300 dark:border-teal-800/80 text-teal-800 dark:text-teal-200 text-xs font-mono font-semibold mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>FICCT // UAGRM • PANEL SEGURO</span>
-            </div>
-
             <h1 className="text-2xl sm:text-3xl font-display font-black text-slate-900 dark:text-white tracking-tight">
               Portal de Administración
             </h1>
@@ -134,7 +129,7 @@ export default function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="marcolop450@gmail.com"
+                  placeholder="Gmail"
                   disabled={loading}
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-slate-50 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800/80 text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-teal-400/50 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition"
                 />

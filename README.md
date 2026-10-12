@@ -1,94 +1,109 @@
-# 🚀 KIRIS - Innovación en Razonamiento e Inteligencia de Sistemas
+# 🌐 KIRIS - Plataforma Académica & Hub de Recursos
 
-> **"Inteligencia Artificial para el día a día"**  
-> Plataforma oficial de presentación, repositorio de auxiliaturas universitarias (UAGRM - FICCT) con enlaces a Google Drive, catálogo de recomendaciones tecnológicas y panel de control administrativo.
+> **Innovación en Razonamiento e Inteligencia de Sistemas**  
+> Plataforma web oficial para la centralización de auxiliaturas universitarias (FICCT - UAGRM), repositorio de enlaces a Google Drive, curaduría de recursos de programación e inteligencia artificial, y panel administrativo modular.
 
 ---
 
-## 👤 Autor & Desarrollador
+## 👤 Autor
+
 * **Marco Alejandro Lopez Velasquez (KIRIS)**
-* **Institución:** Estudiante de Ingeniería Informática • **UAGRM - FICCT** (Santa Cruz, Bolivia)
+* **Rol:** Estudiante de Ingeniería Informática • Auxiliar de Cátedra • Desarrollador con IA
+* **Institución:** Universidad Autónoma Gabriel René Moreno (**UAGRM - FICCT**), Santa Cruz de la Sierra, Bolivia.
 * **Contacto:** [marcolop450@gmail.com](mailto:marcolop450@gmail.com)
 * **GitHub:** [github.com/marcolop450](https://github.com/marcolop450)
 
 ---
 
-## 🌟 Características Principales
+## 🧭 Estructura del Proyecto
 
-1. **Landing de Presentación Tecnológica**:
-   * Banner oficial e isotipo de KIRIS con diseño espacial nocturno (`#060B14`, `#0B1528`, acentos en cian `#00A3FF`).
-   * Presentación del perfil, stack de tecnologías (Java, C++, C#, Python, Delphi, Next.js, Supabase) y terminal ASCII interactiva.
-   * Botonera dinámica de redes y perfiles (GitHub, Correo, WhatsApp, AWS Cloud) administrable sin tocar código.
+### 🏛️ 1. Portal Público
+* **Inicio (`/`)**: Presentación oficial, estadísticas de acceso y navegación rápida hacia los módulos clave.
+* **Auxiliaturas (`/auxiliaturas`)**: Repositorio de materiales y carpetas en Google Drive organizadas por materia, sigla (`INF-XXX`), grupo (`SA`, `SB`) y semestre lectivo. Incluye buscador en tiempo real y paginación fluida.
+* **Recursos & Programación (`/recursos`)**: Colección seleccionada de herramientas de desarrollo, canales educativos de YouTube, plataformas de práctica de lógica y documentación de IA clasificada por categorías temáticas.
+* **Sobre Mí (`/sobre-mi`)**: Ficha de presentación profesional, perfil académico y canales directos de contacto.
 
-2. **Módulo de Auxiliaturas Universitarias (Google Drive)**:
-   * Filtros dinámicos en tiempo real por **Materia**, **Sigla** (ej. `INF-220`, `SIS-214`) y **Grupo** (ej. `SA`, `SC`).
-   * **Múltiples enlaces a Google Drive por auxiliatura**: Carpetas principales, grabaciones de clases en Meet/Zoom, prácticas resueltas y guías en PDF.
+### 🛡️ 2. Panel de Administración Modular (`/admin/dashboard`)
+Panel privado de alta seguridad estructurado en páginas independientes con URLs dedicadas:
 
-3. **Catálogo de Recomendaciones**:
-   * Clasificación interactiva por pestañas (`WEB`, `CLASES`, `CANALES DE YOUTUBE`, `INTELIGENCIA ARTIFICIAL` y categorías personalizadas).
-   * Enlaces externos seguros con `rel="noopener noreferrer" target="_blank"`.
-
-4. **Panel de Administración Seguro (`/admin`)**:
-   * Acceso exclusivo para el administrador protegido con autenticación de Supabase Auth.
-   * **CRUD Completo**:
-     * Registro y edición de auxiliaturas con múltiples enlaces a Google Drive.
-     * Creación de nuevas categorías y recursos recomendados.
-     * Configuración dinámica de enlaces de redes y perfiles sociales.
-     * **Gestor de Tareas (Task Manager)** privado para seguimiento de actividades y pendientes académicos.
-
-5. **Seguridad Multi-Capa**:
-   * **Row Level Security (RLS)** en PostgreSQL: los usuarios anónimos únicamente pueden leer (`SELECT`); solo el administrador autenticado puede crear, modificar o eliminar registros.
-   * Sanitización de entradas, prevención contra XSS y secretos protegidos mediante `.env.local` y `.gitignore`.
+* **Resumen General (`/admin/dashboard`)**: Métricas KPI en tiempo real y accesos rápidos de gestión.
+* **Semestres (`/admin/dashboard/semestres`)**: Gestión de períodos académicos y selección del semestre lectivo en curso.
+* **Catálogo de Materias (`/admin/dashboard/materias`)**: Registro maestro de asignaturas con código único oficial.
+* **Auxiliaturas (`/admin/dashboard/auxiliaturas`)**: Asignación de grupos, semestres y gestión de múltiples enlaces a Google Drive.
+* **Categorías (`/admin/dashboard/categorias`)**: Organización temática exclusiva para clasificar recomendaciones y herramientas externas.
+* **Recursos & Recomendaciones (`/admin/dashboard/recomendaciones`)**: Publicación de enlaces con validación estricta de protocolo (`http://`, `https://`) y destacado.
+* **Redes y Canales (`/admin/dashboard/redes`)**: Configuración dinámica de perfiles sociales y medios de contacto.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## ⚡ Stack Tecnológico
 
-* **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Lucide React Icons.
-* **Backend as a Service**: Supabase (PostgreSQL, Supabase Auth, Row Level Security).
-* **Despliegue Recomendado**: Vercel (soporte serverless de alta velocidad e ISR).
+| Capa | Tecnologías |
+| :--- | :--- |
+| **Framework** | [Next.js 15](https://nextjs.org/) (App Router, Server Components y Streaming) |
+| **Librería UI** | [React 19](https://react.dev/) |
+| **Lenguaje** | [TypeScript](https://www.typescriptlang.org/) con tipado estricto |
+| **Estilos** | [Tailwind CSS](https://tailwindcss.com/) (diseño responsivo, modo claro/oscuro) |
+| **Iconos** | [Lucide React](https://lucide.dev/) |
+| **Base de Datos & Auth** | [Supabase](https://supabase.com/) (PostgreSQL con Row Level Security) |
+| **Despliegue** | [Vercel](https://vercel.com/) |
 
 ---
 
-## ⚙️ Configuración Paso a Paso
+## 🔒 Arquitectura de Seguridad
 
-### 1. Clonar el repositorio y ejecutar localmente
+1. **Middleware en el Servidor (`middleware.ts`)**: Protección automática sobre todas las rutas `/admin/*` (excepto `/admin/login`). Redirección instantánea si no existe cookie de autenticación válida.
+2. **Row Level Security (RLS)**: Las tablas de PostgreSQL permiten únicamente consultas de lectura (`SELECT`) a visitantes anónimos. Operaciones de escritura (`INSERT`, `UPDATE`, `DELETE`) están restringidas al usuario administrador autenticado.
+3. **Manejo de Errores Resiliente**: Los fallos de conexión o base de datos muestran un mensaje genérico *"Problemas de Servidor"*, evitando la exposición de detalles internos o códigos SQL en la interfaz.
+
+---
+
+## 🚀 Despliegue en Vercel (Paso a Paso)
+
+### Paso 1: Configurar la Base de Datos en Supabase
+1. Ingresa a tu panel en [supabase.com](https://supabase.com) y crea un proyecto.
+2. Ve al **SQL Editor** en el menú izquierdo.
+3. Abre el archivo [`supabase/setup_complete_kiris_v2.sql`](./supabase/setup_complete_kiris_v2.sql) de este repositorio, copia su contenido, pégalo en el editor y presiona **Run**.
+   *(Opcional: Si deseas reiniciar la base de datos limpia desde cero, usa [`supabase/recreate_full_database.sql`](./supabase/recreate_full_database.sql)).*
+4. En **Project Settings $\rightarrow$ API**, copia tu **Project URL** y tu **anon public key**.
+
+### Paso 2: Importar en Vercel
+1. Entra a [vercel.com](https://vercel.com) e inicia sesión con tu cuenta de GitHub.
+2. Haz clic en **Add New... $\rightarrow$ Project**.
+3. Selecciona el repositorio `Mi_Presentacion`.
+4. En la sección **Environment Variables**, agrega las dos variables de Supabase:
+   * `NEXT_PUBLIC_SUPABASE_URL` = `https://tu-proyecto.supabase.co`
+   * `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `tu-clave-anon-aqui`
+5. Haz clic en **Deploy**. Vercel compilará la aplicación y generará la URL pública de producción en segundos.
+
+---
+
+## 💻 Desarrollo Local
+
 ```bash
+# 1. Clonar el repositorio
 git clone https://github.com/marcolop450/Mi_Presentacion.git
 cd Mi_Presentacion
+
+# 2. Instalar dependencias
 npm install
-npm run dev
-```
-Abre tu navegador en `http://localhost:3000`.
 
-### 2. Configurar Supabase (1 Clic)
-1. Ingresa a tu proyecto en [supabase.com](https://supabase.com).
-2. Ve a la pestaña **SQL Editor** en el menú lateral izquierdo.
-3. Copia todo el contenido del archivo [`supabase/schema.sql`](./supabase/schema.sql) y pulsa **Run**.
-4. ¡Listo! Se habrán creado las tablas, las políticas de seguridad RLS y los datos iniciales de prueba.
-
-### 3. Conectar las Credenciales
-1. En tu panel de Supabase, dirígete a **Project Settings $\rightarrow$ API**.
-2. Copia la `Project URL` y la `anon / public key`.
-3. Crea un archivo `.env.local` en la raíz del proyecto (basado en `.env.example`):
-```env
+# 3. Configurar variables de entorno
+# Crea un archivo .env.local con tus credenciales:
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anon-aqui
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anon
+
+# 4. Iniciar servidor de desarrollo
+npm run dev
+
+# 5. Ejecutar suite de pruebas
+npm test
 ```
+
+La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
 
 ---
 
-## 🚀 Despliegue en Vercel
+## 📄 Licencia
 
-1. Sube tu código a GitHub:
-   ```bash
-   git add .
-   git commit -m "feat: plataforma web kiris completa"
-   git push origin main
-   ```
-2. Entra en [vercel.com](https://vercel.com) e inicia sesión con GitHub.
-3. Haz clic en **Add New... $\rightarrow$ Project** y selecciona el repositorio `Mi_Presentacion`.
-4. En **Environment Variables**, añade:
-   * `NEXT_PUBLIC_SUPABASE_URL`
-   * `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-5. Pulsa **Deploy** y tu plataforma estará en línea en segundos.
+Este proyecto está disponible bajo la licencia MIT para fines educativos y de la comunidad universitaria FICCT - UAGRM.

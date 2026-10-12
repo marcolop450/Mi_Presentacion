@@ -29,7 +29,7 @@ export default async function HomePage() {
     {
       value: "FICCT",
       label: "Comunidad Universitaria",
-      detail: "Sistemas, Redes e Informática",
+      detail: "Sistemas, Informática y Redes",
       icon: GraduationCap,
     },
     {
@@ -39,8 +39,8 @@ export default async function HomePage() {
       icon: Database,
     },
     {
-      value: "IA & Dev",
-      label: "Curaduría Especializada",
+      value: "Desarrollo y IA",
+      label: "Recursos para Programacion",
       detail: "Herramientas verificadas para el día a día",
       icon: Cpu,
     },
@@ -49,27 +49,27 @@ export default async function HomePage() {
   const sections = [
     {
       title: "Auxiliaturas Universitarias",
-      badge: "DRIVE NEXUS",
-      description: "Carpetas oficiales en Google Drive organizadas por Sigla, Materia y Grupo para estudiantes de la FICCT - UAGRM.",
-      features: ["Carpetas oficiales de Drive", "Horarios y códigos de aula", "Enlace directo sin publicidad"],
+      badge: "DRIVE",
+      description: "Carpetas oficiales en Google Drive para estudiantes de la FICCT - UAGRM.",
+      features: ["Carpetas oficiales de Drive", "Enlace directo"],
       href: "/auxiliaturas",
       icon: GraduationCap,
       cta: "Explorar Auxiliaturas",
     },
     {
-      title: "Recursos & Inteligencia Artificial",
-      badge: "HUB CURADO",
-      description: "Herramientas web, canales de divulgación científica, librerías de software y recursos de IA curados para el día a día.",
-      features: ["Frameworks y librerías modernas", "Canales de YouTube recomendados", "Filtro dinámico por categoría"],
+      title: "Recursos para el Desarrollo",
+      badge: "CANALES O PLATAFORMAS",
+      description: "Herramientas web, canales de divulgación científica, librerías de software y recursos recomendados por mi para el día a día.",
+      features: ["Repositorios Utiles", "Canales de YouTube recomendados", "Paginas para mejorar la Logica o Programacion"],
       href: "/recursos",
       icon: Compass,
       cta: "Ver Recursos",
     },
     {
-      title: "Sobre Mí & Contacto",
-      badge: "DOSSIER",
-      description: "Perfil académico, enfoque en razonamiento de sistemas, stack tecnológico y canales de contacto directo de Marco Lopez.",
-      features: ["Trayectoria y roles en la FICCT", "Stack tecnológico completo", "Canales de contacto verificados"],
+      title: "Sobre Mí - Marco Alejandro",
+      badge: "AUXILIAR",
+      description: "Estudiante de Ingeniería Informática en la Universidad Autónoma Gabriel René Moreno (UAGRM - FICCT). ",
+      features: ["Auxiliar de Catedra", "Ing. informatico", "Desarrollador con IA"],
       href: "/sobre-mi",
       icon: User,
       cta: "Conocer Más",
@@ -86,11 +86,6 @@ export default async function HomePage() {
       icon: FolderGit2,
       title: "Material Centralizado",
       description: "Acceso transparente y estructurado a los apuntes, guías y soluciones de auxiliaturas en Google Drive.",
-    },
-    {
-      icon: Sparkles,
-      title: "Inteligencia Artificial Práctica",
-      description: "Herramientas de última generación seleccionadas para multiplicar la productividad en el estudio e investigación.",
     },
   ];
 
@@ -135,10 +130,6 @@ export default async function HomePage() {
         <section className="py-16 md:py-20">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-white dark:bg-teal-950/80 text-teal-700 dark:text-teal-300 border border-slate-300 dark:border-teal-800/80 mb-3 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                <span>ECOSISTEMA KIRIS</span>
-              </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
                 Módulos de la Plataforma
               </h2>
@@ -205,7 +196,7 @@ export default async function HomePage() {
                 Principios del Ecosistema KIRIS
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-teal-200/70 mt-1">
-                Innovación fundamentada en rigor técnico, accesibilidad libre y pensamiento computacional.
+                Innovación fundamentada, accesibilidad libre y pensamiento computacional.
               </p>
             </div>
 

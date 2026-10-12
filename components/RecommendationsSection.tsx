@@ -96,23 +96,12 @@ export default function RecommendationsSection({
         {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-slate-200 dark:border-teal-400/10">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-teal-950/70 border border-slate-300 dark:border-teal-800/80 text-teal-700 dark:text-teal-300 text-xs font-mono font-semibold mb-3 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>NEXUS // RECURSOS &amp; IA</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
               Recursos y Recomendaciones
             </h1>
             <p className="text-sm text-slate-600 dark:text-teal-100/70 mt-2 max-w-[65ch]">
-              Herramientas de desarrollo, canales científicos, papers y librerías modernas de IA seleccionadas.
+              Herramientas de desarrollo, canales científicos, papers y recursos recomendados por mi para el día a día.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-teal-950/40 border border-slate-300 dark:border-teal-800/50 text-xs font-medium text-slate-600 dark:text-teal-200/80 backdrop-blur-xs shadow-xs">
-            <Sparkles className="w-4 h-4 text-emerald-500" />
-            <span>Curaduría Especializada</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-            <span>Verificada</span>
           </div>
         </div>
 
@@ -126,7 +115,7 @@ export default function RecommendationsSection({
               Aún no hay recomendaciones registradas
             </h3>
             <p className="text-xs text-slate-500 dark:text-teal-200/70 mt-2 leading-relaxed">
-              Las recomendaciones seleccionadas aparecerán aquí una vez agregadas en el panel administrativo.
+              Las recomendaciones seleccionadas aparecerán aquí en esta seccion una vez agregado.
             </p>
           </div>
         ) : (

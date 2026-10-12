@@ -97,10 +97,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
         {/* Cabecera de Sección Enriquecida */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-6 border-b border-slate-200 dark:border-teal-400/10">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-teal-950/70 border border-slate-300 dark:border-teal-800/80 text-teal-700 dark:text-teal-300 text-xs font-mono font-semibold mb-3 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>FICCT // UAGRM • REPOSITORIO OFICIAL</span>
-            </div>
             <h1 className="text-3xl sm:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
               Auxiliaturas Universitarias
             </h1>
