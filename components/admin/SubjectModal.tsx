@@ -7,6 +7,7 @@ import AdminInput from "./AdminInput";
 import AdminTextarea from "./AdminTextarea";
 import AdminSelect from "./AdminSelect";
 import InitialsAvatar from "@/components/InitialsAvatar";
+import { Plus } from "lucide-react";
 
 export interface SubjectModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export interface SubjectModalProps {
     image_url: string | null;
     description: string | null;
   }) => Promise<void> | void;
+  onOpenNewCategory?: () => void;
   subjectNameTestId?: string;
 }
 
@@ -31,6 +33,7 @@ export default function SubjectModal({
   categories,
   onClose,
   onSave,
+  onOpenNewCategory,
   subjectNameTestId = "admin-subject-name",
 }: SubjectModalProps) {
   const [name, setName] = useState("");
@@ -106,18 +109,34 @@ export default function SubjectModal({
           </div>
         </div>
 
-        <AdminSelect
-          label="Categoría / Área Académica"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-        >
-          <option value="">Sin categoría específica</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </AdminSelect>
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-teal-200">
+              Categoría / Área Académica (Opcional)
+            </label>
+            {onOpenNewCategory && (
+              <button
+                type="button"
+                onClick={onOpenNewCategory}
+                className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Crear nueva categoría</span>
+              </button>
+            )}
+          </div>
+          <AdminSelect
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="">Sin categoría específica</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </AdminSelect>
+        </div>
 
         {/* URL de Imagen con Avatar de Iniciales de Respaldo */}
         <div>

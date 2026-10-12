@@ -1706,6 +1706,7 @@ export default function AdminDashboardPage() {
         categories={categoriesList}
         onClose={() => setActiveModalType(null)}
         onSave={handleSaveSubject}
+        onOpenNewCategory={() => openCategoryModal()}
         subjectNameTestId="admin-subject-name" /* data-testid="admin-subject-name" */
       />
 
