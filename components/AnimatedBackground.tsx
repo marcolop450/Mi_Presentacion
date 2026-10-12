@@ -67,13 +67,6 @@ interface ShootingStar {
   active: boolean;
 }
 
-interface CloudPuff {
-  dx: number;
-  dy: number;
-  rx: number;
-  ry: number;
-}
-
 interface WinterCloud {
   x: number;
   y: number;
@@ -81,7 +74,7 @@ interface WinterCloud {
   height: number;
   speed: number;
   alpha: number;
-  puffs: CloudPuff[];
+  seed: number;
 }
 
 interface IceCrystal {
@@ -187,23 +180,16 @@ export default function AnimatedBackground() {
     let iceCrystals: IceCrystal[] = [];
     let flock: Flock = { x: -120, y: 200, speed: 0.5, birds: [] };
 
-    // Generador de nubes nórdicas volumétricas con lóbulos orgánicos aleatorios
+    // Generador de nubes nórdicas continuas y orgánicas (Bézier suave, sin círculos artificiales)
     const createRandomCloud = (startX: number, screenWidth: number): WinterCloud => {
-      const w = 240 + Math.random() * 200;
-      const h = 34 + Math.random() * 22;
-      const y = 85 + Math.random() * 115; // 85px a 200px (Cómodamente DEBAJO del Navbar de 64px)
-      const speed = 0.08 + Math.random() * 0.14;
-      const alpha = 0.35 + Math.random() * 0.22;
+      const w = 230 + Math.random() * 190;
+      const h = 38 + Math.random() * 22;
+      const y = 92 + Math.random() * 110; // 92px a 202px (Cómodamente DEBAJO del Navbar de 64px)
+      const speed = 0.08 + Math.random() * 0.12;
+      const alpha = 0.72 + Math.random() * 0.18; // Opacidad algodonosa y visible
+      const seed = Math.random() * 1000;
 
-      // 4 lóbulos orgánicos aleatorios
-      const puffs: CloudPuff[] = [
-        { dx: -w * 0.28, dy: h * 0.12, rx: w * 0.26, ry: h * 0.55 },
-        { dx: -w * 0.06, dy: -h * 0.22, rx: w * 0.32, ry: h * 0.70 },
-        { dx: w * 0.18, dy: -h * 0.08, rx: w * 0.28, ry: h * 0.62 },
-        { dx: w * 0.34, dy: h * 0.18, rx: w * 0.22, ry: h * 0.48 },
-      ];
-
-      return { x: startX, y, width: w, height: h, speed, alpha, puffs };
+      return { x: startX, y, width: w, height: h, speed, alpha, seed };
     };
 
     // Generador de bandada de aves / patos en formación horizontal (>) con altitud y velocidad randómicas
@@ -697,99 +683,182 @@ export default function AnimatedBackground() {
       ctx.restore();
     };
 
-    // Dibuja una nube nórdica realista con múltiples lóbulos orgánicos y sombreado invernal
+    // Dibuja una nube nórdica orgánica continua con curvas Bézier suaves (cero círculos artificiales)
     const drawOrganicWinterCloud = (cloud: WinterCloud) => {
-      const cx = cloud.x;
-      const cy = cloud.y;
-      const w = cloud.width;
+      const { x: cx, y: cy, width: w, height: h, alpha, seed } = cloud;
 
       ctx.save();
+      ctx.globalAlpha = Math.min(1, alpha);
 
-      // 1. Sombra inferior en gris pizarra frío suave
-      ctx.fillStyle = `rgba(148, 163, 184, ${(cloud.alpha * 0.35).toFixed(2)})`;
-      for (const puff of cloud.puffs) {
+      // Parámetros de modulación orgánica para que cada nube tenga su propia silueta única
+      const mod1 = Math.sin(seed * 0.13) * 0.12;
+      const mod2 = Math.cos(seed * 0.27) * 0.14;
+      const mod3 = Math.sin(seed * 0.41) * 0.10;
+
+      // Trazo continuo y unificado de la silueta de la nube (sin círculos ni elipses individuales)
+      const traceContinuousCloud = (expansion = 0, yOffset = 0) => {
+        const halfW = (w + expansion) * 0.5;
+        const cloudH = h + expansion * 0.4;
+        const baseY = cy + yOffset + cloudH * 0.32;
+
         ctx.beginPath();
-        ctx.ellipse(cx + puff.dx, cy + puff.dy + 6, puff.rx * 0.95, puff.ry * 0.9, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        // 1. Base inferior suavemente plana con leve ondulación
+        ctx.moveTo(cx - halfW * 0.96, baseY);
+        ctx.bezierCurveTo(
+          cx - halfW * 0.45, baseY + cloudH * 0.08,
+          cx + halfW * 0.45, baseY + cloudH * 0.08,
+          cx + halfW * 0.96, baseY
+        );
 
-      // 2. Masa principal de la nube en blanco invernal suave
-      const cloudGrad = ctx.createLinearGradient(cx - w * 0.5, cy, cx + w * 0.5, cy);
-      cloudGrad.addColorStop(0, "transparent");
-      cloudGrad.addColorStop(0.2, `rgba(241, 245, 249, ${(cloud.alpha * 0.85).toFixed(2)})`);
-      cloudGrad.addColorStop(0.5, `rgba(255, 255, 255, ${(cloud.alpha * 0.95).toFixed(2)})`);
-      cloudGrad.addColorStop(0.8, `rgba(241, 245, 249, ${(cloud.alpha * 0.85).toFixed(2)})`);
-      cloudGrad.addColorStop(1, "transparent");
+        // 2. Extremo derecho suave y alargado
+        ctx.bezierCurveTo(
+          cx + halfW * 1.04, baseY - cloudH * 0.22,
+          cx + halfW * 0.88, cy + yOffset - cloudH * 0.18,
+          cx + halfW * 0.68, cy + yOffset - cloudH * (0.38 + mod1)
+        );
 
-      ctx.fillStyle = cloudGrad;
-      for (const puff of cloud.puffs) {
-        ctx.beginPath();
-        ctx.ellipse(cx + puff.dx, cy + puff.dy, puff.rx, puff.ry, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        // 3. Lóbulo medio-derecho
+        ctx.bezierCurveTo(
+          cx + halfW * 0.56, cy + yOffset - cloudH * (0.72 + mod2),
+          cx + halfW * 0.26, cy + yOffset - cloudH * (0.82 + mod1),
+          cx + halfW * 0.08, cy + yOffset - cloudH * (0.64 + mod3)
+        );
 
-      // 3. Realce superior iluminado por el sol nórdico
-      ctx.fillStyle = `rgba(255, 255, 255, ${(cloud.alpha * 0.55).toFixed(2)})`;
-      for (const puff of cloud.puffs) {
-        ctx.beginPath();
-        ctx.ellipse(cx + puff.dx, cy + puff.dy - puff.ry * 0.35, puff.rx * 0.75, puff.ry * 0.45, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        // 4. Cúpula principal cumulus (ondulación central-izquierda dominante)
+        ctx.bezierCurveTo(
+          cx - halfW * 0.08, cy + yOffset - cloudH * (1.10 + mod2),
+          cx - halfW * 0.42, cy + yOffset - cloudH * (0.98 + mod1),
+          cx - halfW * 0.54, cy + yOffset - cloudH * (0.58 + mod3)
+        );
+
+        // 5. Hombro izquierdo suave descendente hacia la base
+        ctx.bezierCurveTo(
+          cx - halfW * 0.74, cy + yOffset - cloudH * (0.52 + mod1),
+          cx - halfW * 1.06, cy + yOffset - cloudH * 0.12,
+          cx - halfW * 0.96, baseY
+        );
+
+        ctx.closePath();
+      };
+
+      // 1. Bruma de vapor difuso en la base (suaviza la silueta con el cielo azul)
+      const vaporGrad = ctx.createLinearGradient(cx, cy, cx, cy + h * 0.5);
+      vaporGrad.addColorStop(0, "rgba(224, 238, 250, 0.0)");
+      vaporGrad.addColorStop(0.6, "rgba(214, 232, 248, 0.22)");
+      vaporGrad.addColorStop(1, "rgba(198, 222, 244, 0.40)");
+
+      traceContinuousCloud(16, 6);
+      ctx.fillStyle = vaporGrad;
+      ctx.fill();
+
+      // 2. Masa principal continua en blanco invernal suave (gradiente vertical puro, sin cortes)
+      const bodyGrad = ctx.createLinearGradient(cx, cy - h * 1.1, cx, cy + h * 0.35);
+      bodyGrad.addColorStop(0, "rgba(255, 255, 255, 0.98)");
+      bodyGrad.addColorStop(0.45, "rgba(250, 253, 255, 0.94)");
+      bodyGrad.addColorStop(0.78, "rgba(238, 246, 253, 0.88)");
+      bodyGrad.addColorStop(1, "rgba(218, 235, 249, 0.65)");
+
+      traceContinuousCloud(0, 0);
+      ctx.fillStyle = bodyGrad;
+      ctx.fill();
+
+      // 3. Realce luminoso superior (sol nórdico iluminando la cima de la nube)
+      ctx.save();
+      traceContinuousCloud(0, 0);
+      ctx.clip();
+
+      const sunRim = ctx.createLinearGradient(cx, cy - h * 1.15, cx, cy - h * 0.25);
+      sunRim.addColorStop(0, "rgba(255, 255, 255, 0.75)");
+      sunRim.addColorStop(0.5, "rgba(255, 255, 255, 0.25)");
+      sunRim.addColorStop(1, "transparent");
+
+      ctx.fillStyle = sunRim;
+      ctx.fillRect(cx - w, cy - h * 1.3, w * 2, h * 1.2);
+      ctx.restore();
 
       ctx.restore();
     };
 
-    // Dibuja el Sol de Invierno (Posición segura y rayos estrictamente descendentes hacia el bosque)
+    // Dibuja el Sol de Invierno (Resplandeciente, cálido, limpio y sin rayos proyectados)
     const drawImprovedWinterSun = () => {
-      const sunX = width * 0.84;
-      const sunY = 165; // Cómodamente abajo del Navbar de 64px (101px de distancia)
+      const sunX = width * 0.83;
+      const sunY = 150; // Posición segura y visible (debajo del Navbar de 64px, margen amplio de 86px)
       const sunRadius = 32;
 
       ctx.save();
 
-      // 1. Rayos crepusculares suaves que descienden HACIA EL BOSQUE (NUNCA hacia el navbar)
-      const numRays = 5;
-      for (let i = 0; i < numRays; i++) {
-        // Ángulos descendentes entre 0.45*PI (abajo) y 0.85*PI (abajo-izquierda hacia el valle)
-        const rayAngle = Math.PI * 0.45 + (i * 0.09) + Math.sin(clock * 0.2 + i) * 0.02;
-        const rayLen = height * 0.75;
-        const rayTargetX = sunX + Math.cos(rayAngle) * rayLen;
-        const rayTargetY = sunY + Math.sin(rayAngle) * rayLen;
+      // Pulsación térmica orgánica suave y natural
+      const shimmer = Math.sin(clock * 1.4) * 2.0;
 
-        const rayGrad = ctx.createLinearGradient(sunX, sunY + 10, rayTargetX, rayTargetY);
-        rayGrad.addColorStop(0, "rgba(254, 243, 199, 0.18)");
-        rayGrad.addColorStop(0.35, "rgba(224, 242, 254, 0.08)");
-        rayGrad.addColorStop(1, "transparent");
-
-        ctx.fillStyle = rayGrad;
-        ctx.beginPath();
-        ctx.moveTo(sunX, sunY + 10);
-        ctx.lineTo(rayTargetX - 35, rayTargetY);
-        ctx.lineTo(rayTargetX + 35, rayTargetY);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // 2. Halo solar difuso acotado (radio máx 68px, 165 - 68 = 97px > 64px navbar, NUNCA cortado)
-      const sunAtmosphere = ctx.createRadialGradient(
-        sunX, sunY, sunRadius * 0.5,
-        sunX, sunY, sunRadius * 2.1
+      // 1. Amplio halo atmosférico difuso (irradia calidez suave en el frío invernal)
+      const outerAtmosphere = ctx.createRadialGradient(
+        sunX, sunY, sunRadius * 0.8,
+        sunX, sunY, 195 + shimmer
       );
-      sunAtmosphere.addColorStop(0, "rgba(255, 254, 240, 0.95)");
-      sunAtmosphere.addColorStop(0.30, "rgba(254, 243, 199, 0.45)");
-      sunAtmosphere.addColorStop(0.65, "rgba(253, 230, 138, 0.15)");
-      sunAtmosphere.addColorStop(1, "transparent");
+      outerAtmosphere.addColorStop(0, "rgba(254, 240, 138, 0.32)");
+      outerAtmosphere.addColorStop(0.35, "rgba(253, 224, 71, 0.14)");
+      outerAtmosphere.addColorStop(0.70, "rgba(254, 249, 195, 0.05)");
+      outerAtmosphere.addColorStop(1, "transparent");
 
-      ctx.fillStyle = sunAtmosphere;
+      ctx.fillStyle = outerAtmosphere;
       ctx.beginPath();
-      ctx.arc(sunX, sunY, sunRadius * 2.1, 0, Math.PI * 2);
+      ctx.arc(sunX, sunY, 195 + shimmer, 0, Math.PI * 2);
       ctx.fill();
 
-      // 3. Disco del sol nítido y radiante
-      ctx.fillStyle = "rgba(255, 255, 250, 0.99)";
+      // 2. Corona solar dorada intermedia
+      const midCorona = ctx.createRadialGradient(
+        sunX, sunY, sunRadius * 0.4,
+        sunX, sunY, 88 + shimmer * 0.7
+      );
+      midCorona.addColorStop(0, "rgba(255, 254, 240, 0.90)");
+      midCorona.addColorStop(0.35, "rgba(254, 240, 138, 0.60)");
+      midCorona.addColorStop(0.75, "rgba(253, 224, 71, 0.20)");
+      midCorona.addColorStop(1, "transparent");
+
+      ctx.fillStyle = midCorona;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 88 + shimmer * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. Disco del sol nítido, radiante y luminoso (blanco puro cálido)
+      const coreGrad = ctx.createRadialGradient(
+        sunX - 4, sunY - 4, 3,
+        sunX, sunY, sunRadius
+      );
+      coreGrad.addColorStop(0, "#ffffff");
+      coreGrad.addColorStop(0.70, "#fffef5");
+      coreGrad.addColorStop(0.92, "#fef9c3");
+      coreGrad.addColorStop(1, "#fef08a");
+
+      ctx.fillStyle = coreGrad;
       ctx.beginPath();
       ctx.arc(sunX, sunY, sunRadius, 0, Math.PI * 2);
       ctx.fill();
+
+      // 4. Sutil destello óptico en cruz (difracción fotográfica fina, NO conos ni rayos)
+      const flareLen = sunRadius * 2.2 + shimmer * 1.2;
+
+      const flareH = ctx.createLinearGradient(sunX - flareLen, sunY, sunX + flareLen, sunY);
+      flareH.addColorStop(0, "transparent");
+      flareH.addColorStop(0.5, "rgba(255, 255, 255, 0.50)");
+      flareH.addColorStop(1, "transparent");
+      ctx.strokeStyle = flareH;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(sunX - flareLen, sunY);
+      ctx.lineTo(sunX + flareLen, sunY);
+      ctx.stroke();
+
+      const flareV = ctx.createLinearGradient(sunX, sunY - flareLen, sunX, sunY + flareLen);
+      flareV.addColorStop(0, "transparent");
+      flareV.addColorStop(0.5, "rgba(255, 255, 255, 0.50)");
+      flareV.addColorStop(1, "transparent");
+      ctx.strokeStyle = flareV;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(sunX, sunY - flareLen);
+      ctx.lineTo(sunX, sunY + flareLen);
+      ctx.stroke();
 
       ctx.restore();
     };
