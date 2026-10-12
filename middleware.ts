@@ -3,8 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Solo aplicar a rutas privadas del panel administrativo
-  if (pathname.startsWith("/admin/dashboard")) {
+  // Proteger estrictamente todas las rutas de administración excepto /admin/login
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     const allCookies = request.cookies.getAll();
     const hasAuthCookie = allCookies.some((cookie: { name: string; value: string }) =>
       cookie.name.includes("auth-token") || cookie.name.startsWith("sb-")
@@ -21,5 +21,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/dashboard/:path*", "/admin/dashboard"],
+  matcher: ["/admin/:path*", "/admin"],
 };

@@ -39,3 +39,6 @@ export type { SocialModalProps } from "./SocialModal";
 
 export { default as AdminPagination } from "./AdminPagination";
 export type { PaginationProps } from "./AdminPagination";
+
+export { AdminProvider, useAdmin, ITEMS_PER_PAGE } from "./AdminContext";
+
