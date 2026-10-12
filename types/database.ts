@@ -3,6 +3,7 @@ export interface SocialLink {
   label: string;
   icon_name: string;
   url: string;
+  image_url?: string;
   is_active: boolean;
   display_order: number;
   created_at?: string;
@@ -15,6 +16,7 @@ export interface Category {
   description?: string;
   color?: string;
   display_order: number;
+  created_at?: string;
 }
 
 export interface Recommendation {
@@ -23,8 +25,10 @@ export interface Recommendation {
   title: string;
   description: string;
   url: string;
+  image_url?: string;
   tags: string[];
   is_featured: boolean;
+  display_order?: number;
   created_at: string;
   category?: Category;
 }
@@ -38,22 +42,12 @@ export interface DriveLinkItem {
 export interface Auxiliary {
   id: string;
   subject_name: string;
-  subject_code: string; // e.g. "SIS-214"
+  subject_code: string; // e.g. "INF-220"
   group_code: string;   // e.g. "SA"
-  schedule?: string;    // e.g. "Mar/Jue 14:00 - 16:00"
+  image_url?: string;
   semester?: string;    // e.g. "II-2026"
   description?: string;
   drive_links: DriveLinkItem[];
   is_active: boolean;
-  created_at: string;
-}
-
-export interface AdminTask {
-  id: string;
-  title: string;
-  description?: string;
-  priority: 'baja' | 'media' | 'alta';
-  status: 'pendiente' | 'en_progreso' | 'completada';
-  due_date?: string;
   created_at: string;
 }

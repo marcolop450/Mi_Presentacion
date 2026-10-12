@@ -33,6 +33,7 @@ export async function getRecommendations(categoryId?: string): Promise<Recommend
       .from("recommendations")
       .select("*, category:categories(*)")
       .order("is_featured", { ascending: false })
+      .order("display_order", { ascending: true })
       .order("created_at", { ascending: false });
 
     if (categoryId && categoryId !== "all") {

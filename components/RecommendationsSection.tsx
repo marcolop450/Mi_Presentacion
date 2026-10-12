@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Share2,
 } from "lucide-react";
+import InitialsAvatar from "@/components/InitialsAvatar";
 
 interface RecommendationsSectionProps {
   categories: Category[];
@@ -31,6 +32,10 @@ export default function RecommendationsSection({
   const [activeCategoryId, setActiveCategoryId] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+  }, [categories]);
 
   const filteredRecommendations = useMemo(() => {
     return initialRecommendations.filter((rec) => {
@@ -125,7 +130,7 @@ export default function RecommendationsSection({
                   >
                     Todas ({initialRecommendations.length})
                   </button>
-                  {categories.map((cat) => {
+                  {sortedCategories.map((cat) => {
                     const countInCat = initialRecommendations.filter(r => r.category_id === cat.id).length;
                     return (
                       <button
@@ -196,23 +201,29 @@ export default function RecommendationsSection({
                     className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#081e19]/80 border border-slate-300 dark:border-teal-900/60 hover:border-slate-400 dark:hover:border-teal-500 transition-all duration-200 shadow-xs hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-xs"
                   >
                     <div>
-                      {/* Cabecera de la Tarjeta con Badges Detallados */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="text-[11px] font-mono text-teal-700 dark:text-teal-300 font-semibold px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800/60">
-                          {getDomain(rec.url)}
-                        </span>
+                      {/* Cabecera de la Tarjeta con Avatar y Badges */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3">
+                          <InitialsAvatar src={rec.image_url} name={rec.title} size="md" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-mono text-teal-700 dark:text-teal-300 font-semibold px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800/60">
+                                {getDomain(rec.url)}
+                              </span>
 
-                        {rec.is_featured && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100/70 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80">
-                            <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                            <span>Destacado</span>
-                          </span>
-                        )}
+                              {rec.is_featured && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-100/70 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800/80">
+                                  <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Destacado</span>
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight mt-1">
+                              {rec.title}
+                            </h3>
+                          </div>
+                        </div>
                       </div>
-
-                      <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
-                        {rec.title}
-                      </h3>
 
                       <p className="text-sm text-slate-600 dark:text-teal-100/70 mt-2.5 leading-relaxed">
                         {rec.description}

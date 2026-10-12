@@ -51,7 +51,6 @@ async function runTests() {
     assert.ok(initialData.includes("defaultCategories: Category[] = []"), "defaultCategories debe ser []");
     assert.ok(initialData.includes("defaultRecommendations: Recommendation[] = []"), "defaultRecommendations debe ser []");
     assert.ok(initialData.includes("defaultAuxiliaries: Auxiliary[] = []"), "defaultAuxiliaries debe ser []");
-    assert.ok(initialData.includes("defaultAdminTasks: AdminTask[] = []"), "defaultAdminTasks debe ser []");
     recordTest("2. Estado Limpio: initialData.ts con colecciones vacías por defecto", true);
   } catch (err) {
     recordTest("2. Estado Limpio: initialData.ts con colecciones vacías por defecto", false, err);

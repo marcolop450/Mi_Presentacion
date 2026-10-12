@@ -9,7 +9,6 @@ import {
   FileText,
   ExternalLink,
   Calendar,
-  Clock,
   Layers,
   Inbox,
   Copy,
@@ -18,6 +17,7 @@ import {
   Cloud,
   CheckCircle2,
 } from "lucide-react";
+import InitialsAvatar from "@/components/InitialsAvatar";
 
 interface AuxiliariesSectionProps {
   auxiliaries: Auxiliary[];
@@ -209,36 +209,31 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                     className="rounded-3xl p-6 sm:p-7 flex flex-col justify-between bg-white/85 dark:bg-[#081e19]/80 border border-slate-300 dark:border-teal-900/60 hover:border-slate-400 dark:hover:border-teal-500 transition-all duration-200 shadow-xs hover:shadow-md hover:shadow-teal-500/5 backdrop-blur-xs"
                   >
                     <div>
-                      {/* Cabecera de la Tarjeta con Badges Detallados */}
-                      <div className="flex items-center justify-between gap-2 mb-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 rounded-xl text-xs font-mono font-bold bg-slate-100 text-teal-900 dark:bg-teal-950/90 dark:text-teal-300 border border-slate-300 dark:border-teal-800/80">
-                            {aux.subject_code}
-                          </span>
-                          <span className="px-2.5 py-1 rounded-xl text-xs font-mono font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
-                            Grupo {aux.group_code}
-                          </span>
+                      {/* Cabecera de la Tarjeta con Avatar y Badges */}
+                      <div className="flex items-start justify-between gap-3 mb-3.5">
+                        <div className="flex items-center gap-3">
+                          <InitialsAvatar src={aux.image_url} name={aux.subject_name} size="md" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-100 text-teal-900 dark:bg-teal-950/90 dark:text-teal-300 border border-slate-300 dark:border-teal-800/80">
+                                {aux.subject_code}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-medium bg-slate-100 text-slate-700 dark:bg-slate-800/90 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                                Grupo {aux.group_code}
+                              </span>
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight mt-1">
+                              {aux.subject_name}
+                            </h3>
+                          </div>
                         </div>
                         {aux.semester && (
-                          <span className="text-xs font-mono text-slate-500 dark:text-teal-300/70 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/70 border border-slate-200 dark:border-transparent dark:bg-teal-950/40">
+                          <span className="text-xs font-mono text-slate-500 dark:text-teal-300/70 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/70 border border-slate-200 dark:border-transparent dark:bg-teal-950/40 shrink-0">
                             <Calendar className="w-3.5 h-3.5 text-teal-500" />
                             {aux.semester}
                           </span>
                         )}
                       </div>
-
-                      {/* Título de la Materia */}
-                      <h3 className="text-xl font-display font-bold text-slate-900 dark:text-white tracking-tight">
-                        {aux.subject_name}
-                      </h3>
-
-                      {/* Horario */}
-                      {aux.schedule && (
-                        <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-teal-200/70 mt-2 font-mono">
-                          <Clock className="w-3.5 h-3.5 text-teal-500" />
-                          <span>{aux.schedule}</span>
-                        </div>
-                      )}
 
                       {/* Descripción */}
                       {aux.description && (
