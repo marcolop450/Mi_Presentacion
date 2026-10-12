@@ -15,8 +15,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ----------------------------------------------------------------------------
--- PASO 2: ELIMINACIÓN DE MÓDULOS OBSOLETOS
+-- PASO 2: ELIMINACIÓN Y LIMPIEZA DE TABLAS ANTERIORES (DROP CASCADE)
 -- ----------------------------------------------------------------------------
+DROP TABLE IF EXISTS public.auxiliaries CASCADE;
+DROP TABLE IF EXISTS public.recommendations CASCADE;
+DROP TABLE IF EXISTS public.subjects CASCADE;
+DROP TABLE IF EXISTS public.semesters CASCADE;
+DROP TABLE IF EXISTS public.categories CASCADE;
+DROP TABLE IF EXISTS public.social_links CASCADE;
 DROP TABLE IF EXISTS public.admin_tasks CASCADE;
 
 -- ----------------------------------------------------------------------------
