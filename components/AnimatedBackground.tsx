@@ -183,10 +183,10 @@ export default function AnimatedBackground() {
     // Generador de nubes nórdicas continuas y orgánicas (Bézier suave, sin círculos artificiales)
     const createRandomCloud = (startX: number, screenWidth: number): WinterCloud => {
       const w = 230 + Math.random() * 190;
-      const h = 38 + Math.random() * 22;
-      const y = 92 + Math.random() * 110; // 92px a 202px (Cómodamente DEBAJO del Navbar de 64px)
-      const speed = 0.08 + Math.random() * 0.12;
-      const alpha = 0.72 + Math.random() * 0.18; // Opacidad algodonosa y visible
+      const h = 34 + Math.random() * 18;
+      const y = 45 + Math.random() * 65; // Flotan suavemente en el cielo superior
+      const speed = 0.06 + Math.random() * 0.08;
+      const alpha = 0.30 + Math.random() * 0.15; // Opacidad etérea y suave de fondo
       const seed = Math.random() * 1000;
 
       return { x: startX, y, width: w, height: h, speed, alpha, seed };

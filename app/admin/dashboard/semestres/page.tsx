@@ -113,11 +113,11 @@ export default function SemestersAdminPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
             {paginatedSemesters.map((sem) => (
               <div
                 key={sem.id}
-                className={`p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border ${
+                className={`p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border ${
                   sem.is_current
                     ? "border-teal-500 shadow-md shadow-teal-500/10 ring-1 ring-teal-500/20"
                     : "border-slate-300 dark:border-teal-800/60 shadow-xs"

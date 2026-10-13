@@ -77,7 +77,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const [semRes, catRes, subRes, auxRes, recRes, socRes] = await Promise.all([
         supabase.from("semesters").select("*").order("display_order", { ascending: true }),
         supabase.from("categories").select("*").order("display_order", { ascending: true }),
-        supabase.from("subjects").select("*").order("code", { ascending: true }),
+        supabase.from("subjects").select("*").order("semester_level", { ascending: true }).order("code", { ascending: true }),
         supabase.from("auxiliaries").select("*, subject:subjects(*), semester:semesters(*)").order("created_at", { ascending: false }),
         supabase.from("recommendations").select("*, category:categories(*)").order("created_at", { ascending: false }),
         supabase.from("social_links").select("*").order("display_order", { ascending: true }),

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Subject } from "@/types/database";
+import { Subject, SEMESTER_LEVELS } from "@/types/database";
 import AdminModal from "./AdminModal";
 import AdminInput from "./AdminInput";
 import AdminTextarea from "./AdminTextarea";
+import AdminSelect from "./AdminSelect";
 import InitialsAvatar from "@/components/InitialsAvatar";
 
 export interface SubjectModalProps {
@@ -15,6 +16,7 @@ export interface SubjectModalProps {
   onSave: (payload: {
     name: string;
     code: string;
+    semester_level: number;
     image_url: string | null;
     description: string | null;
   }) => Promise<void> | void;
@@ -31,6 +33,7 @@ export default function SubjectModal({
 }: SubjectModalProps) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [semesterLevel, setSemesterLevel] = useState<number>(1);
   const [imageUrl, setImageUrl] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,11 +42,13 @@ export default function SubjectModal({
     if (initialData && mode === "edit") {
       setName(initialData.name || "");
       setCode(initialData.code || "");
+      setSemesterLevel(initialData.semester_level || 1);
       setImageUrl(initialData.image_url || "");
       setDescription(initialData.description || "");
     } else {
       setName("");
       setCode("");
+      setSemesterLevel(1);
       setImageUrl("");
       setDescription("");
     }
@@ -58,6 +63,7 @@ export default function SubjectModal({
       await onSave({
         name: name.trim(),
         code: code.trim().toUpperCase(),
+        semester_level: Number(semesterLevel) || 1,
         image_url: imageUrl.trim() || null,
         description: description.trim() || null,
       });
@@ -97,6 +103,19 @@ export default function SubjectModal({
             />
           </div>
         </div>
+
+        {/* Semestre de la Materia (1 al 10 o Electiva) */}
+        <AdminSelect
+          label="Semestre Curricular de la Carrera"
+          required
+          value={semesterLevel}
+          onChange={(e) => setSemesterLevel(Number(e.target.value))}
+          options={SEMESTER_LEVELS.map((lvl) => ({
+            value: lvl.value,
+            label: lvl.label,
+          }))}
+          helperText="Nivel en la malla curricular. Ordena automáticamente las materias en el Landing de 1ro a 10mo semestre."
+        />
 
         {/* URL de Imagen con Avatar de Iniciales de Respaldo */}
         <div>

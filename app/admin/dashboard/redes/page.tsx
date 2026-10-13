@@ -142,11 +142,11 @@ export default function SocialLinksAdminPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
             {paginatedSocialLinks.map((soc) => (
               <div
                 key={soc.id}
-                className={`p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border ${
+                className={`p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border ${
                   soc.is_active
                     ? "border-slate-300 dark:border-teal-800/60"
                     : "border-slate-200 dark:border-teal-950 opacity-60"

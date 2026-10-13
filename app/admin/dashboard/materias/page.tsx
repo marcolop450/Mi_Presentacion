@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { BookOpen, Plus, Edit3, Trash2, Search } from "lucide-react";
-import { Subject } from "@/types/database";
+import { Subject, getSemesterLevelLabel } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useAdmin, ITEMS_PER_PAGE } from "@/components/admin/AdminContext";
 import {
@@ -25,14 +25,22 @@ export default function SubjectsAdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<Subject | null>(null);
 
   const filteredSubjects = useMemo(() => {
-    if (!searchQuery) return subjectsList;
-    const q = searchQuery.toLowerCase();
-    return subjectsList.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.code.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q))
-    );
+    let list = subjectsList;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.code.toLowerCase().includes(q) ||
+          (s.description && s.description.toLowerCase().includes(q))
+      );
+    }
+    return [...list].sort((a, b) => {
+      const semA = a.semester_level || 1;
+      const semB = b.semester_level || 1;
+      if (semA !== semB) return semA - semB;
+      return a.code.localeCompare(b.code);
+    });
   }, [subjectsList, searchQuery]);
 
   const totalPages = Math.ceil(filteredSubjects.length / ITEMS_PER_PAGE) || 1;
@@ -56,6 +64,7 @@ export default function SubjectsAdminPage() {
   const handleSaveSubject = async (payload: {
     name: string;
     code: string;
+    semester_level: number;
     image_url: string | null;
     description: string | null;
   }) => {
@@ -138,7 +147,7 @@ export default function SubjectsAdminPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
             {paginatedSubjects.map((sub) => {
               const linkedGroups = auxiliariesList.filter(
                 (a) => a.subject_id === sub.id || a.subject_code === sub.code
@@ -146,7 +155,7 @@ export default function SubjectsAdminPage() {
               return (
                 <div
                   key={sub.id}
-                  className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
+                  className="p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-3">
@@ -156,6 +165,9 @@ export default function SubjectsAdminPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
                               {sub.code}
+                            </span>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950/60 text-slate-700 dark:text-teal-200 border border-slate-200 dark:border-teal-900/60">
+                              {getSemesterLevelLabel(sub.semester_level)}
                             </span>
                           </div>
                           <h3 className="text-base font-display font-bold text-slate-900 dark:text-white mt-1 leading-snug">

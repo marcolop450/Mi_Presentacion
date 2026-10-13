@@ -107,13 +107,13 @@ export default function CategoriesAdminPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
             {paginatedCategories.map((cat) => {
               const linkedCount = recommendationsList.filter((r) => r.category_id === cat.id).length;
               return (
                 <div
                   key={cat.id}
-                  className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
+                  className="p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-3">

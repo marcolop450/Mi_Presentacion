@@ -23,6 +23,9 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { AdminProvider, useAdmin } from "@/components/admin/AdminContext";
+import { AdminAudioProvider } from "@/components/admin/AdminAudioContext";
+import AdminAudioPlayer from "@/components/admin/AdminAudioPlayer";
+import AdminAudioVisualizer from "@/components/admin/AdminAudioVisualizer";
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -319,6 +322,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
+        {/* Reproductor de Audio Oficial KIRIS */}
+        <AdminAudioPlayer />
+
         {/* Footer del Sidebar con Utilidades y Cerrar Sesión */}
         <div className="shrink-0 pt-3 border-t border-slate-200 dark:border-teal-900/60 space-y-2">
           <div className="flex items-center justify-between px-3 py-1.5">
@@ -351,9 +357,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       {/* ------------------------------------------------------------- */}
       {/* CONTENIDO PRINCIPAL                                           */}
       {/* ------------------------------------------------------------- */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 min-w-0 p-4 sm:p-5 lg:p-6 max-w-7xl mx-auto w-full relative">
         {children}
       </main>
+
+      {/* Visualizador de Audio Reactivo en vivo cuando suena la música (exclusivo de Admin) */}
+      <AdminAudioVisualizer />
     </div>
   );
 }
@@ -361,7 +370,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
+      <AdminAudioProvider>
+        <AdminLayoutContent>{children}</AdminLayoutContent>
+      </AdminAudioProvider>
     </AdminProvider>
   );
 }

@@ -7,11 +7,7 @@ import {
   Compass,
   User,
   ArrowRight,
-  Database,
-  Cloud,
   Cpu,
-  BookOpen,
-  Sparkles,
   CheckCircle2,
   FolderGit2,
 } from "lucide-react";
@@ -19,57 +15,42 @@ import {
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const telemetryStats = [
-    {
-      value: "100%",
-      label: "Acceso Libre y Gratuito",
-      detail: "Google Drive oficial sin muros",
-      icon: Cloud,
-    },
-    {
-      value: "FICCT",
-      label: "Comunidad Universitaria",
-      detail: "Sistemas, Informática y Redes",
-      icon: GraduationCap,
-    },
-    {
-      value: "24/7",
-      label: "Disponibilidad Cloud",
-      detail: "Materiales y guías siempre en línea",
-      icon: Database,
-    },
-    {
-      value: "Desarrollo y IA",
-      label: "Recursos para Programacion",
-      detail: "Herramientas verificadas para el día a día",
-      icon: Cpu,
-    },
-  ];
-
   const sections = [
     {
       title: "Auxiliaturas Universitarias",
-      badge: "DRIVE",
-      description: "Carpetas oficiales en Google Drive para estudiantes de la FICCT - UAGRM.",
-      features: ["Carpetas oficiales de Drive", "Enlace directo"],
+      badge: "FICCT - UAGRM",
+      description: "Carpetas oficiales organizadas por materia y semestre curricular, con enlaces directos y visor integrado para laboratorios.",
+      features: [
+        "Clasificación de 1er a 10mo semestre",
+        "Páginas dedicadas por asignatura",
+        "Visor integrado de documentos y enlaces Drive",
+      ],
       href: "/auxiliaturas",
       icon: GraduationCap,
       cta: "Explorar Auxiliaturas",
     },
     {
       title: "Recursos para el Desarrollo",
-      badge: "CANALES O PLATAFORMAS",
-      description: "Herramientas web, canales de divulgación científica, librerías de software y recursos recomendados por mi para el día a día.",
-      features: ["Repositorios Utiles", "Canales de YouTube recomendados", "Paginas para mejorar la Logica o Programacion"],
+      badge: "CURADURÍA IA & DEV",
+      description: "Herramientas web, canales de divulgación científica, librerías y documentación curada para estudiantes y programadores.",
+      features: [
+        "Herramientas y plataformas web",
+        "Canales y material de autoaprendizaje",
+        "Organización temática por áreas",
+      ],
       href: "/recursos",
       icon: Compass,
       cta: "Ver Recursos",
     },
     {
       title: "Sobre Mí - Marco Alejandro",
-      badge: "AUXILIAR",
-      description: "Estudiante de Ingeniería Informática en la Universidad Autónoma Gabriel René Moreno (UAGRM - FICCT). ",
-      features: ["Auxiliar de Catedra", "Ing. informatico", "Desarrollador con IA"],
+      badge: "PERFIL ACADÉMICO",
+      description: "Auxiliar de Cátedra y estudiante de Ingeniería Informática en la Universidad Autónoma Gabriel René Moreno (UAGRM).",
+      features: [
+        "Auxiliar docente universitario",
+        "Enfoque en estructuras y algoritmos",
+        "Desarrollo e inteligencia de sistemas",
+      ],
       href: "/sobre-mi",
       icon: User,
       cta: "Conocer Más",
@@ -79,13 +60,13 @@ export default async function HomePage() {
   const pillars = [
     {
       icon: Cpu,
-      title: "Razonamiento de Sistemas",
-      description: "Comprensión profunda de estructuras algorítmicas, arquitectura de código limpio y resolución lógica.",
+      title: "Razonamiento y Lógica",
+      description: "Comprensión rigurosa de algoritmos, análisis asintótico y patrones de diseño de software.",
     },
     {
       icon: FolderGit2,
-      title: "Material Centralizado",
-      description: "Acceso transparente y estructurado a los apuntes, guías y soluciones de auxiliaturas en Google Drive.",
+      title: "Acceso Universitario Abierto",
+      description: "Materiales estructurados en la nube sin muros de pago, listos para consulta desde cualquier dispositivo o laboratorio.",
     },
   ];
 
@@ -96,49 +77,19 @@ export default async function HomePage() {
         {/* Hero Section */}
         <HeroBanner />
 
-        {/* Telemetría y Métricas Académicas */}
-        <section className="py-6 border-y border-slate-200 dark:border-teal-400/10">
-          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              {telemetryStats.map((stat, i) => {
-                const Icon = stat.icon;
-                return (
-                  <div
-                    key={i}
-                    className="p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-teal-950/20 border border-slate-300 dark:border-teal-800/40 backdrop-blur-xs flex flex-col items-center text-center shadow-xs"
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-teal-100/60 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center mb-2">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <span className="font-display font-black text-xl sm:text-2xl text-teal-800 dark:text-teal-200 tracking-tight">
-                      {stat.value}
-                    </span>
-                    <span className="text-xs font-bold text-slate-800 dark:text-white mt-0.5">
-                      {stat.label}
-                    </span>
-                    <span className="text-[11px] text-slate-500 dark:text-teal-200/60 mt-0.5">
-                      {stat.detail}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Módulos de la Plataforma - Abierto y Fluido con Detalles Enriquecidos */}
-        <section className="py-16 md:py-20">
+        {/* Módulos de la Plataforma */}
+        <section className="py-16 md:py-20 border-t border-slate-200 dark:border-teal-400/10">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white tracking-tight">
                 Módulos de la Plataforma
               </h2>
-              <p className="text-sm text-slate-600 dark:text-teal-100/70 mt-2 font-sans max-w-[60ch] mx-auto">
-                Acceso directo a las áreas de trabajo, bibliotecas cloud y dossier institucional.
+              <p className="text-sm text-slate-600 dark:text-teal-100/80 mt-2 font-sans max-w-[60ch] mx-auto">
+                Acceso centralizado a las asignaturas universitarias, biblioteca de recursos y perfil institucional.
               </p>
             </div>
 
-            {/* Cuadrícula Abierta con Detalles */}
+            {/* Cuadrícula de Módulos con Fondo Nítido */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
               {sections.map((sec) => {
                 const IconComponent = sec.icon;
@@ -146,11 +97,11 @@ export default async function HomePage() {
                   <Link
                     key={sec.href}
                     href={sec.href}
-                    className="group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-white/80 dark:bg-teal-950/20 border border-slate-300 dark:border-teal-800/40 hover:border-slate-400 dark:hover:border-teal-600 hover:bg-white dark:hover:bg-teal-950/40 transition-all duration-300 backdrop-blur-xs shadow-xs hover:shadow-md hover:-translate-y-1"
+                    className="group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-white dark:hover:bg-[#0a2329] transition-all duration-300 backdrop-blur-xs shadow-xs hover:shadow-md hover:shadow-teal-500/10 hover:-translate-y-1"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-2xl bg-teal-100/70 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-2xl bg-teal-100 dark:bg-teal-900/40 text-teal-700 dark:text-teal-300 flex items-center justify-center group-hover:scale-105 transition-transform">
                           <IconComponent className="w-6 h-6" />
                         </div>
                         <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-slate-300 dark:border-teal-800/60">
@@ -162,14 +113,13 @@ export default async function HomePage() {
                         {sec.title}
                       </h3>
 
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-100/70 mt-2.5 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-teal-100/75 mt-2.5 leading-relaxed">
                         {sec.description}
                       </p>
 
-                      {/* Lista de características micro-detalladas */}
-                      <ul className="mt-5 space-y-1.5 pt-4 border-t border-slate-200 dark:border-teal-900/40">
+                      <ul className="mt-5 space-y-2 pt-4 border-t border-slate-200 dark:border-teal-900/50">
                         {sec.features.map((feat, idx) => (
-                          <li key={idx} className="flex items-center gap-2 text-xs text-slate-600 dark:text-teal-200/70">
+                          <li key={idx} className="flex items-center gap-2 text-xs text-slate-600 dark:text-teal-200/80">
                             <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 shrink-0" />
                             <span>{feat}</span>
                           </li>
@@ -200,21 +150,21 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {pillars.map((p, i) => {
                 const Icon = p.icon;
                 return (
                   <div
                     key={i}
-                    className="p-5 rounded-2xl bg-white/70 dark:bg-teal-950/15 border border-slate-300 dark:border-teal-800/30 backdrop-blur-xs shadow-xs"
+                    className="p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 backdrop-blur-xs shadow-xs"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-teal-100/60 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center mb-3">
-                      <Icon className="w-4 h-4" />
+                    <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center mb-3">
+                      <Icon className="w-5 h-5" />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
                       {p.title}
                     </h3>
-                    <p className="text-xs text-slate-600 dark:text-teal-200/70 mt-1.5 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-teal-200/80 mt-2 leading-relaxed">
                       {p.description}
                     </p>
                   </div>

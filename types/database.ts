@@ -52,9 +52,30 @@ export interface Subject {
   id: string;
   name: string; // e.g. "Estructuras de Datos I"
   code: string; // e.g. "INF-220"
+  semester_level?: number; // 1..10 o 11 (Electiva)
   image_url?: string;
   description?: string;
   created_at?: string;
+}
+
+export const SEMESTER_LEVELS = [
+  { value: 1, label: "1er Semestre" },
+  { value: 2, label: "2do Semestre" },
+  { value: 3, label: "3er Semestre" },
+  { value: 4, label: "4to Semestre" },
+  { value: 5, label: "5to Semestre" },
+  { value: 6, label: "6to Semestre" },
+  { value: 7, label: "7mo Semestre" },
+  { value: 8, label: "8vo Semestre" },
+  { value: 9, label: "9no Semestre" },
+  { value: 10, label: "10mo Semestre" },
+  { value: 11, label: "Electiva" },
+];
+
+export function getSemesterLevelLabel(level?: number): string {
+  if (!level) return "1er Semestre";
+  const found = SEMESTER_LEVELS.find((s) => s.value === level);
+  return found ? found.label : `${level}º Semestre`;
 }
 
 export interface Auxiliary {

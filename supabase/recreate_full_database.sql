@@ -66,6 +66,7 @@ CREATE TABLE public.subjects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,                -- Ej: "Estructuras de Datos I"
     code VARCHAR(50) NOT NULL UNIQUE,          -- Ej: "INF-220"
+    semester_level INT NOT NULL DEFAULT 1,     -- Semestre curricular (1..10 o 11 para Electiva)
     image_url TEXT,
     description TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -124,6 +125,7 @@ CREATE TABLE public.social_links (
 CREATE INDEX idx_categories_order ON public.categories(display_order);
 CREATE INDEX idx_semesters_current ON public.semesters(is_current);
 CREATE INDEX idx_subjects_code ON public.subjects(code);
+CREATE INDEX idx_subjects_semester_level ON public.subjects(semester_level);
 CREATE INDEX idx_recommendations_category ON public.recommendations(category_id);
 CREATE INDEX idx_recommendations_featured ON public.recommendations(is_featured);
 CREATE INDEX idx_auxiliaries_subject ON public.auxiliaries(subject_id);

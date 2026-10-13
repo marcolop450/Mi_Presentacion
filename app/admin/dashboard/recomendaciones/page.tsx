@@ -227,20 +227,20 @@ export default function RecommendationsAdminPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
             {paginatedRecommendations.map((rec) => {
               const cat = categoriesList.find((c) => c.id === rec.category_id);
               return (
                 <div
                   key={rec.id}
-                  className="p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
+                  className="p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between"
                 >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
                         {cat && (
                           <span
-                            className="text-[10px] font-mono px-2 py-0.5 rounded-md border"
+                            className="text-[11px] font-mono font-medium px-2.5 py-1 rounded-xl border inline-flex items-center whitespace-nowrap"
                             style={{
                               backgroundColor: `${cat.color || "#0d9488"}20`,
                               borderColor: `${cat.color || "#0d9488"}50`,
@@ -251,37 +251,37 @@ export default function RecommendationsAdminPage() {
                           </span>
                         )}
                         {rec.is_featured && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-700">
-                            <Sparkles className="w-3 h-3 text-amber-500" />
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/80 px-2.5 py-1 rounded-xl border border-amber-300 dark:border-amber-700 whitespace-nowrap">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                             <span>Destacado</span>
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] font-mono text-slate-400 dark:text-teal-400">
+                      <span className="text-[11px] font-mono font-semibold text-slate-400 dark:text-teal-400">
                         #{rec.display_order ?? 0}
                       </span>
                     </div>
 
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-center gap-3">
                       <InitialsAvatar src={rec.image_url} name={rec.title} size="md" />
-                      <div>
-                        <h3 className="text-base font-display font-bold text-slate-900 dark:text-white leading-snug">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-display font-bold text-slate-900 dark:text-white leading-snug truncate">
                           {rec.title}
                         </h3>
                       </div>
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-teal-100/70 mt-2 line-clamp-3 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-teal-100/70 line-clamp-3 leading-relaxed">
                       {rec.description}
                     </p>
 
                     {/* Etiquetas */}
                     {rec.tags && rec.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
+                      <div className="flex flex-wrap gap-1.5 pt-1">
                         {rec.tags.map((tag, tIdx) => (
                           <span
                             key={tIdx}
-                            className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-teal-950 text-slate-600 dark:text-teal-300 border border-slate-200 dark:border-teal-900/60"
+                            className="text-[10px] font-mono px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-teal-950 text-slate-600 dark:text-teal-300 border border-slate-200 dark:border-teal-900/60"
                           >
                             #{tag.replace(/^#/, "")}
                           </span>
@@ -290,12 +290,12 @@ export default function RecommendationsAdminPage() {
                     )}
 
                     {/* Enlace Externo */}
-                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-teal-900/40">
+                    <div className="pt-2 border-t border-slate-100 dark:border-teal-900/40">
                       <a
                         href={rec.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline truncate max-w-full"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline truncate max-w-full"
                       >
                         <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{rec.url}</span>

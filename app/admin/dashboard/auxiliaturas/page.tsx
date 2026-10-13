@@ -212,7 +212,7 @@ export default function AuxiliariesAdminPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             {paginatedAuxiliaries.map((aux) => {
               const subName = aux.subject?.name || aux.subject_name || "Materia sin vincular";
               const subCode = aux.subject?.code || aux.subject_code || "INF";
@@ -222,7 +222,7 @@ export default function AuxiliariesAdminPage() {
               return (
                 <div
                   key={aux.id}
-                  className={`p-5 rounded-3xl bg-white/90 dark:bg-[#07191d]/90 border ${
+                  className={`p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border ${
                     aux.is_active ? "border-slate-300 dark:border-teal-800/60" : "border-slate-200 dark:border-teal-950 opacity-60"
                   } shadow-xs flex flex-col justify-between`}
                 >
