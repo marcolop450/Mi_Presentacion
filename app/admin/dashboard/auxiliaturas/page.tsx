@@ -37,6 +37,7 @@ export default function AuxiliariesAdminPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSemesterFilter, setSelectedSemesterFilter] = useState("all");
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
@@ -65,9 +66,16 @@ export default function AuxiliariesAdminPage() {
         a.semester_id === selectedSemesterFilter ||
         a.semester?.code === selectedSemesterFilter;
 
-      return matchSearch && matchSemester;
+      const matchSubject =
+        selectedSubjectFilter === "all" ||
+        a.subject_id === selectedSubjectFilter ||
+        a.subject?.id === selectedSubjectFilter ||
+        a.subject?.code === selectedSubjectFilter ||
+        a.subject_code === selectedSubjectFilter;
+
+      return matchSearch && matchSemester && matchSubject;
     });
-  }, [auxiliariesList, searchQuery, selectedSemesterFilter]);
+  }, [auxiliariesList, searchQuery, selectedSemesterFilter, selectedSubjectFilter]);
 
   const totalPages = Math.ceil(filteredAuxiliaries.length / ITEMS_PER_PAGE) || 1;
   const paginatedAuxiliaries = useMemo(() => {
@@ -166,7 +174,7 @@ export default function AuxiliariesAdminPage() {
       />
 
       {/* Barra de Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 dark:text-teal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -181,13 +189,31 @@ export default function AuxiliariesAdminPage() {
           />
         </div>
 
+        {/* Filtro por Materia */}
+        <select
+          value={selectedSubjectFilter}
+          onChange={(e) => {
+            setSelectedSubjectFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="px-3.5 pr-9 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer max-w-full sm:max-w-[240px]"
+        >
+          <option value="all">Todas las Materias ({subjectsList.length})</option>
+          {subjectsList.map((sub) => (
+            <option key={sub.id} value={sub.id}>
+              {sub.code} - {sub.name}
+            </option>
+          ))}
+        </select>
+
+        {/* Filtro por Semestre */}
         <select
           value={selectedSemesterFilter}
           onChange={(e) => {
             setSelectedSemesterFilter(e.target.value);
             setCurrentPage(1);
           }}
-          className="px-3.5 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+          className="px-3.5 pr-9 py-2.5 rounded-2xl bg-white/90 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/80 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer max-w-full sm:max-w-[200px]"
         >
           <option value="all">Todos los Semestres</option>
           {semestersList.map((sem) => (
@@ -196,6 +222,22 @@ export default function AuxiliariesAdminPage() {
             </option>
           ))}
         </select>
+
+        {/* Botón para Limpiar Filtros activos */}
+        {(searchQuery || selectedSubjectFilter !== "all" || selectedSemesterFilter !== "all") && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedSubjectFilter("all");
+              setSelectedSemesterFilter("all");
+              setCurrentPage(1);
+            }}
+            className="px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-teal-950/80 dark:hover:bg-teal-900 text-xs font-semibold text-slate-700 dark:text-teal-200 border border-slate-300 dark:border-teal-800/60 transition cursor-pointer self-start sm:self-auto shrink-0"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       {filteredAuxiliaries.length === 0 ? (
@@ -203,7 +245,7 @@ export default function AuxiliariesAdminPage() {
           icon={GraduationCap}
           title="Sin auxiliaturas encontradas"
           description={
-            searchQuery || selectedSemesterFilter !== "all"
+            searchQuery || selectedSemesterFilter !== "all" || selectedSubjectFilter !== "all"
               ? "No se encontraron auxiliaturas con los filtros seleccionados."
               : "Asigna tu primer grupo de auxiliatura a una materia registrada."
           }

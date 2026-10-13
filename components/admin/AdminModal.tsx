@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export interface AdminModalProps {
@@ -28,6 +29,12 @@ export default function AdminModal({
   maxWidth = "lg",
   children,
 }: AdminModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -38,20 +45,31 @@ export default function AdminModal({
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="admin-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto overscroll-contain"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div
-        className={`w-full ${maxWidthMap[maxWidth]} max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-7 bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/60 shadow-2xl animate-in zoom-in-95 duration-150`}
+        className={`w-full ${maxWidthMap[maxWidth]} max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-7 bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/60 shadow-2xl animate-in zoom-in-95 duration-150 my-auto`}
       >
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-teal-900/60 mb-5">
           <div>
@@ -71,7 +89,7 @@ export default function AdminModal({
             type="button"
             onClick={onClose}
             aria-label="Cerrar modal"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-teal-900 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-teal-900 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -81,4 +99,6 @@ export default function AdminModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
