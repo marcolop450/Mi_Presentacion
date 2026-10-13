@@ -11,6 +11,7 @@ import {
   Maximize2,
   Minimize2,
   GripHorizontal,
+  RotateCcw,
 } from "lucide-react";
 
 interface DrivePreviewModalProps {
@@ -29,8 +30,9 @@ export default function DrivePreviewModal({
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Estado para mover / arrastrar la ventana libremente
+  // Posición para arrastre (SOLO activo en escritorio con ratón)
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; initialPosX: number; initialPosY: number }>({
@@ -40,14 +42,32 @@ export default function DrivePreviewModal({
     initialPosY: 0,
   });
 
-  // Resetear posición al abrir o al cambiar modo pantalla completa
+  // Detección de dispositivo de escritorio vs móvil
+  useEffect(() => {
+    const checkIsDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    checkIsDesktop();
+    window.addEventListener("resize", checkIsDesktop);
+    return () => window.removeEventListener("resize", checkIsDesktop);
+  }, []);
+
+  // Resetear estados al abrir
   useEffect(() => {
     if (isOpen) {
       setPosition({ x: 0, y: 0 });
       setIsLoading(true);
       setIsDragging(false);
+
+      // Temporizador de seguridad: si Google Drive no dispara onLoad por políticas de iframe,
+      // el spinner se oculta automáticamente a los 2 segundos para no bloquear la vista del usuario
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+
+      return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, url]);
 
   useEffect(() => {
     if (isFullScreen) {
@@ -56,7 +76,7 @@ export default function DrivePreviewModal({
     }
   }, [isFullScreen]);
 
-  // Escuchar tecla Escape para cerrar
+  // Tecla Escape para cerrar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -73,9 +93,9 @@ export default function DrivePreviewModal({
     };
   }, [isOpen, onClose]);
 
-  // Lógica de arrastre con ratón o táctil
+  // Lógica de arrastre: EXCLUSIVAMENTE para escritorio con ratón
   const handleStartDrag = (clientX: number, clientY: number) => {
-    if (isFullScreen) return;
+    if (isFullScreen || !isDesktop) return;
     setIsDragging(true);
     dragRef.current = {
       startX: clientX,
@@ -86,39 +106,30 @@ export default function DrivePreviewModal({
   };
 
   useEffect(() => {
+    if (!isDesktop) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
       const deltaX = e.clientX - dragRef.current.startX;
       const deltaY = e.clientY - dragRef.current.startY;
-      
-      // Limitar el arrastre para que la cabecera no se pierda fuera de la pantalla
+
       const newX = dragRef.current.initialPosX + deltaX;
       const newY = dragRef.current.initialPosY + deltaY;
 
+      // Límites estrictos: La cabecera NUNCA puede subir más de 30px hacia arriba
+      // garantizando que los botones y la barra superior siempre queden dentro de la pantalla
+      const maxX = window.innerWidth * 0.35;
+      const minX = -window.innerWidth * 0.35;
+      const minY = -30;
+      const maxY = window.innerHeight * 0.35;
+
       setPosition({
-        x: Math.max(-window.innerWidth / 2 + 100, Math.min(window.innerWidth / 2 - 100, newX)),
-        y: Math.max(-window.innerHeight / 2 + 60, Math.min(window.innerHeight / 2 - 60, newY)),
+        x: Math.max(minX, Math.min(maxX, newX)),
+        y: Math.max(minY, Math.min(maxY, newY)),
       });
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging || !e.touches[0]) return;
-      const deltaX = e.touches[0].clientX - dragRef.current.startX;
-      const deltaY = e.touches[0].clientY - dragRef.current.startY;
-      const newX = dragRef.current.initialPosX + deltaX;
-      const newY = dragRef.current.initialPosY + deltaY;
-
-      setPosition({
-        x: Math.max(-window.innerWidth / 2 + 100, Math.min(window.innerWidth / 2 - 100, newX)),
-        y: Math.max(-window.innerHeight / 2 + 60, Math.min(window.innerHeight / 2 - 60, newY)),
-      });
-    };
-
-    const handleTouchEnd = () => {
       setIsDragging(false);
     };
 
@@ -129,19 +140,15 @@ export default function DrivePreviewModal({
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
-      window.addEventListener("touchmove", handleTouchMove, { passive: true });
-      window.addEventListener("touchend", handleTouchEnd);
       window.addEventListener("blur", handleWindowBlur);
     }
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
       window.removeEventListener("blur", handleWindowBlur);
     };
-  }, [isDragging]);
+  }, [isDragging, isDesktop]);
 
   // Convertir URL de Google Drive a URL embebible de previsualización
   const getEmbedUrl = (rawUrl: string): string => {
@@ -186,73 +193,70 @@ export default function DrivePreviewModal({
       }}
       className="fixed inset-0 z-[100000] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200"
     >
-      {/* Overlay transparente global activo durante el arrastre: previene que el iframe intercepte el puntero */}
-      {isDragging && (
+      {/* Overlay transparente global activo solo en arrastre de escritorio */}
+      {isDragging && isDesktop && (
         <div className="fixed inset-0 z-[100005] cursor-grabbing select-none" />
       )}
 
       <div
         style={{
-          transform: isFullScreen ? "none" : `translate3d(${position.x}px, ${position.y}px, 0)`,
+          transform: isFullScreen || !isDesktop ? "none" : `translate3d(${position.x}px, ${position.y}px, 0)`,
         }}
-        className={`w-full bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden transition-shadow select-none ${
+        className={`w-full bg-white dark:bg-[#07191d] border border-slate-300 dark:border-teal-700/80 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden transition-shadow select-none ${
           isFullScreen
-            ? "fixed inset-2 sm:inset-4 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] h-[calc(100%-1rem)] sm:h-[calc(100%-2rem)] max-w-none"
-            : "max-w-5xl h-[88vh] sm:h-[85vh]"
+            ? "fixed inset-1 sm:inset-4 w-[calc(100%-0.5rem)] sm:w-[calc(100%-2rem)] h-[calc(100%-0.5rem)] sm:h-[calc(100%-2rem)] max-w-none"
+            : "max-w-5xl h-[88dvh] sm:h-[85vh] my-auto"
         } ${isDragging ? "shadow-teal-500/25 ring-2 ring-teal-500" : ""}`}
       >
-        {/* Cabecera del Visor - Arrastrable */}
+        {/* Cabecera del Visor - Siempre visible en la parte superior */}
         <div
-          onDoubleClick={() => setPosition({ x: 0, y: 0 })}
+          onDoubleClick={() => isDesktop && setPosition({ x: 0, y: 0 })}
           onMouseDown={(e) => {
-            // Evitar que el clic en botones o enlaces dispare el arrastre
+            if (!isDesktop) return;
             if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("a")) return;
             e.preventDefault();
             handleStartDrag(e.clientX, e.clientY);
           }}
-          onTouchStart={(e) => {
-            if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("a")) return;
-            if (e.touches[0]) {
-              handleStartDrag(e.touches[0].clientX, e.touches[0].clientY);
-            }
-          }}
-          className={`px-4 sm:px-6 py-3.5 border-b border-slate-200 dark:border-teal-900/60 flex items-center justify-between gap-3 bg-slate-50/95 dark:bg-teal-950/70 shrink-0 ${
-            isFullScreen ? "" : "cursor-grab active:cursor-grabbing"
+          className={`px-3.5 sm:px-6 py-3 border-b border-slate-200 dark:border-teal-900/60 flex items-center justify-between gap-2.5 bg-slate-50 dark:bg-teal-950/90 shrink-0 ${
+            isDesktop && !isFullScreen ? "cursor-grab active:cursor-grabbing" : ""
           }`}
-          title={isFullScreen ? "" : "Haz clic y arrastra para mover la ventana (o doble clic para centrar)"}
+          title={isDesktop && !isFullScreen ? "Haz clic y arrastra para mover (o doble clic para centrar)" : ""}
         >
-          <div className="flex items-center gap-2.5 min-w-0 pointer-events-none">
+          {/* Título y Badge */}
+          <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
               <Cloud className="w-4 h-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-mono font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider block">
-                  Visor Integrado KIRIS
+                  Visor KIRIS
                 </span>
-                {!isFullScreen && (
+                {isDesktop && !isFullScreen && (
                   <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 dark:text-teal-300/70 px-2 py-0.2 rounded bg-slate-200/60 dark:bg-teal-900/50">
                     <GripHorizontal className="w-3 h-3" />
                     <span>Arrastrable</span>
                   </span>
                 )}
               </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                 {title}
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Botón recentrar si se ha movido */}
-            {(position.x !== 0 || position.y !== 0) && !isFullScreen && (
+          {/* Botones de acción */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Botón Recentrar en escritorio si se ha movido */}
+            {isDesktop && (position.x !== 0 || position.y !== 0) && !isFullScreen && (
               <button
                 type="button"
                 onClick={() => setPosition({ x: 0, y: 0 })}
-                className="px-2 py-1 rounded-xl text-[11px] font-mono text-teal-700 dark:text-teal-300 hover:bg-slate-200 dark:hover:bg-teal-900/60 transition cursor-pointer flex items-center gap-1"
-                title="Restablecer posición al centro"
+                className="p-1.5 rounded-lg text-[11px] font-mono text-teal-700 dark:text-teal-300 hover:bg-slate-200 dark:hover:bg-teal-900/60 transition cursor-pointer flex items-center gap-1"
+                title="Restablecer al centro"
               >
-                Centrar
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Centrar</span>
               </button>
             )}
 
@@ -261,6 +265,7 @@ export default function DrivePreviewModal({
               onClick={handleCopy}
               className="p-2 rounded-xl text-slate-600 dark:text-teal-200 hover:bg-slate-200 dark:hover:bg-teal-900/60 transition cursor-pointer"
               title="Copiar enlace directo"
+              aria-label="Copiar enlace directo"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
             </button>
@@ -271,6 +276,7 @@ export default function DrivePreviewModal({
               rel="noopener noreferrer"
               className="p-2 rounded-xl text-teal-600 dark:text-teal-400 hover:bg-slate-200 dark:hover:bg-teal-900/60 transition"
               title="Abrir en pestaña nueva de Google Drive"
+              aria-label="Abrir en pestaña nueva"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
@@ -280,27 +286,31 @@ export default function DrivePreviewModal({
               onClick={() => setIsFullScreen(!isFullScreen)}
               className="hidden sm:block p-2 rounded-xl text-slate-600 dark:text-teal-200 hover:bg-slate-200 dark:hover:bg-teal-900/60 transition cursor-pointer"
               title={isFullScreen ? "Restaurar tamaño" : "Pantalla completa"}
+              aria-label={isFullScreen ? "Restaurar tamaño" : "Pantalla completa"}
             >
               {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
 
+            {/* Botón de Cierre Destacado y fácil de pulsar en móvil */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-500 dark:text-teal-300 hover:bg-rose-100 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 transition cursor-pointer"
+              className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition cursor-pointer ml-1"
               title="Cerrar visor"
+              aria-label="Cerrar visor"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
 
         {/* Cuerpo con Iframe Embebido */}
         <div className="relative flex-1 w-full bg-slate-100 dark:bg-[#040e11] overflow-hidden select-auto">
+          {/* Overlay de carga no bloqueante */}
           {isLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/80 dark:bg-[#07191d]/80 backdrop-blur-xs z-10">
+            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center gap-3 bg-white/70 dark:bg-[#07191d]/70 backdrop-blur-xs z-10 transition-opacity duration-300">
               <Loader2 className="w-8 h-8 text-teal-600 dark:text-teal-400 animate-spin" />
-              <p className="text-xs text-slate-600 dark:text-teal-200/80 font-mono">
+              <p className="text-xs text-slate-700 dark:text-teal-200 font-mono font-medium">
                 Cargando documento en visor integrado...
               </p>
             </div>

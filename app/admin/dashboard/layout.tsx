@@ -25,7 +25,6 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { AdminProvider, useAdmin } from "@/components/admin/AdminContext";
 import { AdminAudioProvider } from "@/components/admin/AdminAudioContext";
 import AdminAudioPlayer from "@/components/admin/AdminAudioPlayer";
-import AdminAudioVisualizer from "@/components/admin/AdminAudioVisualizer";
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -221,7 +220,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       {/* SIDEBAR JERÁRQUICO (ORDEN ADMINISTRADOR DE NEGOCIO)            */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed md:sticky top-0 left-0 h-dvh md:h-screen w-72 shrink-0 z-50 md:z-10 bg-white/95 dark:bg-[#07191d]/95 border-r border-slate-300 dark:border-teal-800/60 flex flex-col p-4 sm:p-5 backdrop-blur-xl transition-transform duration-300 ease-out min-h-0 ${
+        className={`fixed md:sticky top-0 left-0 h-dvh md:h-screen w-72 shrink-0 z-50 md:z-10 bg-white/95 dark:bg-[#07191d]/95 border-r border-slate-300 dark:border-teal-800/60 flex flex-col p-4 sm:p-5 backdrop-blur-xl transition-transform duration-300 ease-out overflow-y-auto overscroll-contain pb-12 md:pb-5 ${
           mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -326,7 +325,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         <AdminAudioPlayer />
 
         {/* Footer del Sidebar con Utilidades y Cerrar Sesión */}
-        <div className="shrink-0 pt-3 border-t border-slate-200 dark:border-teal-900/60 space-y-2">
+        <div className="shrink-0 pt-3 border-t border-slate-200 dark:border-teal-900/60 space-y-2 pb-6 md:pb-0">
           <div className="flex items-center justify-between px-3 py-1.5">
             <span className="text-xs text-slate-500 dark:text-teal-300 font-medium">Tema Visual</span>
             <ThemeToggle />
@@ -360,9 +359,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       <main className="flex-1 min-w-0 p-4 sm:p-5 lg:p-6 max-w-7xl mx-auto w-full relative">
         {children}
       </main>
-
-      {/* Visualizador de Audio Reactivo en vivo cuando suena la música (exclusivo de Admin) */}
-      <AdminAudioVisualizer />
     </div>
   );
 }

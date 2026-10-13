@@ -43,14 +43,11 @@ export default function AdminAudioPlayer() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div
-              className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+              className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                 isPlaying
-                  ? "bg-teal-600 text-white shadow-xs scale-105"
+                  ? "bg-teal-600 text-white shadow-xs"
                   : "bg-teal-100 text-teal-800 dark:bg-teal-900/70 dark:text-teal-300"
               }`}
-              style={{
-                boxShadow: isPlaying ? `0 0 ${12 + bass * 20}px rgba(20, 184, 166, 0.6)` : undefined,
-              }}
             >
               <Disc3 className={`w-4 h-4 ${isPlaying ? "animate-spin" : ""}`} />
             </div>
