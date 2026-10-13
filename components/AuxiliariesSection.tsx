@@ -43,7 +43,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSemesterLevel, setSelectedSemesterLevel] = useState<string>("all");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
-  const [selectedGroup, setSelectedGroup] = useState<string>("all");
 
   // Paginación (6 materias por página)
   const ITEMS_PER_PAGE = 6;
@@ -112,11 +111,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
     return Array.from(new Set(groupedSubjects.map((s) => s.subjectName)));
   }, [groupedSubjects]);
 
-  const uniqueGroups = useMemo(() => {
-    const allGroups = auxiliaries.map((a) => a.group_code).filter(Boolean);
-    return Array.from(new Set(allGroups)).sort();
-  }, [auxiliaries]);
-
   // Filtrado reactivo de materias agrupadas
   const filteredSubjects = useMemo(() => {
     return groupedSubjects.filter((subject) => {
@@ -129,11 +123,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
       const matchSubject =
         selectedSubject === "all" || subject.subjectName === selectedSubject;
 
-      const matchGroup =
-        selectedGroup === "all" ||
-        subject.groups.some((g) => g.group_code === selectedGroup);
-
-      if (!matchSemester || !matchSubject || !matchGroup) {
+      if (!matchSemester || !matchSubject) {
         return false;
       }
 
@@ -153,12 +143,12 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
 
       return matchName || matchCode || matchDesc || matchSemesterLabel || matchGroups;
     });
-  }, [groupedSubjects, searchTerm, selectedSemesterLevel, selectedSubject, selectedGroup]);
+  }, [groupedSubjects, searchTerm, selectedSemesterLevel, selectedSubject]);
 
   // Resetear página al filtrar
   useMemo(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedSemesterLevel, selectedSubject, selectedGroup]);
+  }, [searchTerm, selectedSemesterLevel, selectedSubject]);
 
   const totalPages = Math.ceil(filteredSubjects.length / ITEMS_PER_PAGE) || 1;
   const paginatedSubjects = useMemo(() => {
@@ -250,7 +240,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
               {/* Fila de Buscador y Combobox con Flecha Separada de la Pared */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-2 border-t border-slate-200 dark:border-teal-900/40">
                 {/* Buscador */}
-                <div className="sm:col-span-6 relative">
+                <div className="sm:col-span-7 md:col-span-8 relative">
                   <Search className="w-4 h-4 text-teal-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -263,7 +253,7 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                 </div>
 
                 {/* Combobox Materia con Flecha Separada */}
-                <div className="sm:col-span-3 relative">
+                <div className="sm:col-span-5 md:col-span-4 relative">
                   <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
@@ -283,28 +273,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
-
-                {/* Combobox Grupo con Flecha Separada */}
-                <div className="sm:col-span-3 relative">
-                  <select
-                    value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
-                    className="w-full appearance-none pl-3.5 pr-10 py-2.5 rounded-2xl bg-slate-50/90 dark:bg-teal-950/60 border border-slate-300 dark:border-teal-800/80 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-teal-500 transition cursor-pointer"
-                    data-testid="group-select"
-                  >
-                    <option value="all" className="bg-white dark:bg-[#07191d]">
-                      Todos los grupos ({uniqueGroups.length})
-                    </option>
-                    {uniqueGroups.map((grp) => (
-                      <option key={grp} value={grp} className="bg-white dark:bg-[#07191d]">
-                        Grupo {grp}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-teal-400 flex items-center">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                </div>
               </div>
 
               {/* Indicador de resultados */}
@@ -314,14 +282,12 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                 </span>
                 {(searchTerm ||
                   selectedSemesterLevel !== "all" ||
-                  selectedSubject !== "all" ||
-                  selectedGroup !== "all") && (
+                  selectedSubject !== "all") && (
                   <button
                     onClick={() => {
                       setSearchTerm("");
                       setSelectedSemesterLevel("all");
                       setSelectedSubject("all");
-                      setSelectedGroup("all");
                     }}
                     className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
                   >
@@ -346,7 +312,6 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                     setSearchTerm("");
                     setSelectedSemesterLevel("all");
                     setSelectedSubject("all");
-                    setSelectedGroup("all");
                   }}
                   className="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 dark:bg-teal-950/80 dark:hover:bg-teal-900 text-teal-800 dark:text-teal-200 border border-slate-300 dark:border-teal-800 transition shadow-xs cursor-pointer"
                 >
@@ -358,8 +323,9 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {paginatedSubjects.map((sub) => {
                     const subjectHref = `/auxiliaturas/${encodeURIComponent(sub.subjectCode.toLowerCase())}`;
-                    const groupNames = sub.groups.map((g) => `Grupo ${g.group_code}`).join(", ");
-                    const totalLinks = sub.groups.reduce((acc, g) => acc + g.drive_links.length, 0);
+                    const uniqueGroupCodes = Array.from(new Set(sub.groups.map((g) => g.group_code))).sort();
+                    const groupNames = uniqueGroupCodes.map((code) => `Grupo ${code}`).join(", ");
+                    const registeredCount = sub.groups.length;
 
                     return (
                       <div
@@ -400,12 +366,12 @@ export default function AuxiliariesSection({ auxiliaries }: AuxiliariesSectionPr
 
                           {/* Resumen de Grupos Asignados */}
                           <div className="mt-4 p-3 rounded-2xl bg-slate-50/90 dark:bg-teal-950/40 border border-slate-200 dark:border-teal-900/60 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2 text-slate-700 dark:text-teal-200">
-                              <Users className="w-4 h-4 text-teal-500" />
-                              <span className="font-semibold">{groupNames || "1 Grupo"}</span>
+                            <div className="flex items-center gap-2 text-slate-700 dark:text-teal-200 min-w-0">
+                              <Users className="w-4 h-4 text-teal-500 shrink-0" />
+                              <span className="font-semibold truncate">{groupNames || "1 Grupo"}</span>
                             </div>
-                            <span className="text-[11px] font-mono text-teal-700 dark:text-teal-400 bg-white dark:bg-teal-950 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-teal-900/80">
-                              {totalLinks} carpetas
+                            <span className="text-[11px] font-mono text-teal-700 dark:text-teal-400 bg-white dark:bg-teal-950 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-teal-900/80 shrink-0 ml-2">
+                              {registeredCount} {registeredCount === 1 ? "auxiliatura" : "auxiliaturas"}
                             </span>
                           </div>
                         </div>

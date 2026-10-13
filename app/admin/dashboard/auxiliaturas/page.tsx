@@ -77,11 +77,64 @@ export default function AuxiliariesAdminPage() {
     });
   }, [auxiliariesList, searchQuery, selectedSemesterFilter, selectedSubjectFilter]);
 
-  const totalPages = Math.ceil(filteredAuxiliaries.length / ITEMS_PER_PAGE) || 1;
-  const paginatedAuxiliaries = useMemo(() => {
+  interface GroupedAdminAux {
+    key: string;
+    subjectId: string;
+    subjectName: string;
+    subjectCode: string;
+    imageUrl?: string;
+    groupCode: string;
+    items: Auxiliary[];
+  }
+
+  // Agrupar auxiliaturas por Materia + Grupo (ej. INF-220 Grupo SB, INF-220 Grupo SD)
+  const groupedAdminAux = useMemo<GroupedAdminAux[]>(() => {
+    const map = new Map<string, GroupedAdminAux>();
+
+    for (const aux of filteredAuxiliaries) {
+      const subId = aux.subject_id || aux.subject?.id || "no-subj";
+      const subName = aux.subject?.name || aux.subject_name || "Materia sin vincular";
+      const subCode = (aux.subject?.code || aux.subject_code || "INF").toUpperCase();
+      const groupCode = aux.group_code || "Único";
+      const imgUrl = aux.subject?.image_url || aux.image_url;
+      const key = `${subId}-${groupCode}`;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          subjectId: subId,
+          subjectName: subName,
+          subjectCode: subCode,
+          imageUrl: imgUrl,
+          groupCode,
+          items: [],
+        });
+      }
+
+      map.get(key)!.items.push(aux);
+    }
+
+    return Array.from(map.values())
+      .map((grp) => ({
+        ...grp,
+        items: grp.items.sort((a, b) => {
+          const semA = a.semester?.code || (typeof a.semester === "string" ? a.semester : "") || a.semester_code || "";
+          const semB = b.semester?.code || (typeof b.semester === "string" ? b.semester : "") || b.semester_code || "";
+          return semB.localeCompare(semA);
+        }),
+      }))
+      .sort((a, b) => {
+        const codeCmp = a.subjectCode.localeCompare(b.subjectCode);
+        if (codeCmp !== 0) return codeCmp;
+        return a.groupCode.localeCompare(b.groupCode);
+      });
+  }, [filteredAuxiliaries]);
+
+  const totalPages = Math.ceil(groupedAdminAux.length / ITEMS_PER_PAGE) || 1;
+  const paginatedGroups = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAuxiliaries.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredAuxiliaries, currentPage]);
+    return groupedAdminAux.slice(start, start + ITEMS_PER_PAGE);
+  }, [groupedAdminAux, currentPage]);
 
   const openCreateModal = () => {
     setSelectedAux(null);
@@ -255,113 +308,145 @@ export default function AuxiliariesAdminPage() {
       ) : (
         <div className="space-y-4">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-            {paginatedAuxiliaries.map((aux) => {
-              const subName = aux.subject?.name || aux.subject_name || "Materia sin vincular";
-              const subCode = aux.subject?.code || aux.subject_code || "INF";
-              const semCode = aux.semester?.code || (typeof aux.semester === "string" ? aux.semester : "") || aux.semester_code || "";
-              const imgUrl = aux.subject?.image_url || aux.image_url;
+            {paginatedGroups.map((grp) => (
+              <div
+                key={grp.key}
+                className="p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border border-slate-300 dark:border-teal-800/60 shadow-xs flex flex-col justify-between space-y-4"
+              >
+                <div>
+                  {/* Cabecera del Grupo: Avatar, Sigla, Grupo, Materia y contador */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <InitialsAvatar src={grp.imageUrl} name={grp.subjectName} size="md" />
+                      <div className="min-w-0">
+                        <div className="flex items-center flex-wrap gap-1.5 mb-1">
+                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                            {grp.subjectCode}
+                          </span>
+                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
+                            Grupo {grp.groupCode}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-display font-bold text-slate-900 dark:text-white leading-snug truncate">
+                          {grp.subjectName}
+                        </h3>
+                      </div>
+                    </div>
 
-              return (
-                <div
-                  key={aux.id}
-                  className={`p-6 rounded-3xl bg-white/95 dark:bg-[#07191d]/90 border ${
-                    aux.is_active ? "border-slate-300 dark:border-teal-800/60" : "border-slate-200 dark:border-teal-950 opacity-60"
-                  } shadow-xs flex flex-col justify-between`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="flex items-center gap-3">
-                        <InitialsAvatar src={imgUrl} name={subName} size="md" />
-                        <div>
-                          <div className="flex items-center flex-wrap gap-2">
-                            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border border-slate-300 dark:border-teal-800">
-                              {subCode}
+                    <span className="text-[11px] font-mono px-2.5 py-1 rounded-xl bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 font-medium shrink-0">
+                      {grp.items.length} {grp.items.length === 1 ? "semestre" : "semestres"}
+                    </span>
+                  </div>
+
+                  {/* Lista de Semestres y sus Carpetas dentro de este Grupo */}
+                  <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-teal-900/60">
+                    {grp.items.map((aux) => {
+                      const semCode =
+                        aux.semester?.code ||
+                        (typeof aux.semester === "string" ? aux.semester : "") ||
+                        aux.semester_code ||
+                        "Sin semestre";
+
+                      return (
+                        <div
+                          key={aux.id}
+                          className={`p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                            aux.is_active
+                              ? "bg-slate-50/85 dark:bg-teal-950/30 border-slate-200 dark:border-teal-900/60"
+                              : "bg-slate-100/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800 opacity-60"
+                          }`}
+                        >
+                          {/* Fila superior: Semestre, Toggle Público/Oculto y Acciones (Editar/Eliminar) */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-lg bg-teal-100 dark:bg-teal-950 text-teal-900 dark:text-teal-300 border border-teal-200 dark:border-teal-800 flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                                <span>{semCode}</span>
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAuxActive(aux)}
+                                className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition cursor-pointer ${
+                                  aux.is_active
+                                    ? "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                                    : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700"
+                                }`}
+                              >
+                                {aux.is_active ? "Público" : "Oculto"}
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(aux)}
+                                className="p-1.5 rounded-xl text-slate-600 dark:text-teal-200 hover:bg-slate-200 dark:hover:bg-teal-900/60 transition cursor-pointer"
+                                title="Editar este semestre de auxiliatura"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteTarget(aux)}
+                                className="p-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
+                                title="Eliminar este semestre de auxiliatura"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Descripción del Semestre */}
+                          {aux.description && (
+                            <p className="text-xs text-slate-600 dark:text-teal-100/70 mt-2 leading-relaxed">
+                              {aux.description}
+                            </p>
+                          )}
+
+                          {/* Enlaces de Drive del Semestre */}
+                          <div className="mt-2.5 space-y-1.5">
+                            <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-teal-400/80 uppercase tracking-wider block">
+                              Carpetas de Drive ({aux.drive_links?.length || 0})
                             </span>
-                            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
-                              Grupo {aux.group_code}
-                            </span>
-                            {semCode && (
-                              <span className="text-xs font-mono px-2 py-0.5 rounded-lg bg-teal-50 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {semCode}
+                            {aux.drive_links && aux.drive_links.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {aux.drive_links.map((link, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white dark:bg-teal-950 border border-slate-200 dark:border-teal-900/60 text-xs text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/40 transition shadow-2xs"
+                                  >
+                                    <FolderOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                                    <span className="truncate max-w-[160px]">{link.title || "Carpeta Drive"}</span>
+                                    <ExternalLink className="w-3 h-3 text-slate-400 shrink-0" />
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 dark:text-teal-300/50 italic">
+                                Sin carpetas vinculadas
                               </span>
                             )}
                           </div>
-                          <h3 className="text-base font-display font-bold text-slate-900 dark:text-white mt-1 leading-snug">
-                            {subName}
-                          </h3>
                         </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleToggleAuxActive(aux)}
-                        className={`text-[10px] font-mono px-2.5 py-1 rounded-full border transition cursor-pointer ${
-                          aux.is_active
-                            ? "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-700"
-                        }`}
-                      >
-                        {aux.is_active ? "Público" : "Oculto"}
-                      </button>
-                    </div>
-
-                    {aux.description && (
-                      <p className="text-xs text-slate-600 dark:text-teal-100/70 line-clamp-2 mt-2 leading-relaxed">
-                        {aux.description}
-                      </p>
-                    )}
-
-                    {/* Enlaces de Drive */}
-                    <div className="mt-3 space-y-1.5">
-                      <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-teal-400/80 uppercase tracking-wider block">
-                        Carpetas de Drive ({aux.drive_links?.length || 0})
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {aux.drive_links?.map((link, idx) => (
-                          <a
-                            key={idx}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 dark:bg-teal-950/40 border border-slate-200 dark:border-teal-900/60 text-xs text-teal-800 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/40 transition"
-                          >
-                            <FolderOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                            <span className="truncate max-w-[180px]">{link.title || "Carpeta Drive"}</span>
-                            <ExternalLink className="w-3 h-3 text-slate-400" />
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-slate-200 dark:border-teal-900/60 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => openEditModal(aux)}
-                      className="p-2 rounded-xl text-slate-600 dark:text-teal-200 hover:bg-slate-100 dark:hover:bg-teal-950/80 transition"
-                      title="Editar auxiliatura"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(aux)}
-                      className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition"
-                      title="Eliminar auxiliatura"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
           <AdminPagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredAuxiliaries.length}
+            totalItems={groupedAdminAux.length}
             itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
-            itemLabel="auxiliaturas"
+            itemLabel="grupos de auxiliatura"
           />
         </div>
       )}
