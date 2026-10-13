@@ -15,7 +15,6 @@ import {
   Copy,
   Check,
   ExternalLink,
-  Eye,
   Users,
   BookOpen,
   Search,
@@ -23,7 +22,6 @@ import {
   Layers,
 } from "lucide-react";
 import InitialsAvatar from "@/components/InitialsAvatar";
-import DrivePreviewModal from "@/components/DrivePreviewModal";
 
 interface SubjectDetailViewProps {
   subjectName: string;
@@ -49,7 +47,6 @@ export default function SubjectDetailView({
   groups,
 }: SubjectDetailViewProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [previewDoc, setPreviewDoc] = useState<{ title: string; url: string } | null>(null);
 
   // Estados de Filtros locales en la página de la materia
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
@@ -353,33 +350,29 @@ export default function SubjectDetailView({
                           return (
                             <div
                               key={idx}
-                              className="p-3 rounded-2xl bg-slate-50/90 dark:bg-teal-950/40 hover:bg-slate-100/90 dark:hover:bg-teal-900/50 border border-slate-200 dark:border-teal-900/60 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                              className="p-3 rounded-2xl bg-slate-50/90 dark:bg-teal-950/40 hover:bg-slate-100/90 dark:hover:bg-teal-900/50 border border-slate-200 dark:border-teal-900/60 transition group flex items-center justify-between gap-3 shadow-2xs"
                             >
-                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2.5 min-w-0 flex-1 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition"
+                                title="Abrir recurso en Google Drive"
+                              >
                                 {renderLinkIcon(link.type)}
-                                <span className="text-xs font-semibold text-slate-800 dark:text-white truncate">
+                                <span className="text-xs font-semibold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 truncate">
                                   {link.title}
                                 </span>
-                              </div>
+                              </a>
 
-                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                                {/* Botón Vista Previa en KIRIS (Lectura sin cuenta Google en laboratorio) */}
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewDoc({ title: link.title, url: link.url })}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-teal-100/80 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 hover:bg-teal-200 dark:hover:bg-teal-800 text-[11px] font-bold transition cursor-pointer"
-                                  title="Ver documento aquí mismo sin necesidad de cuenta de Google Drive"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  <span>Ver aquí</span>
-                                </button>
-
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 {/* Botón Copiar Enlace */}
                                 <button
                                   type="button"
                                   onClick={() => handleCopy(link.url, linkKey)}
                                   className="p-1.5 rounded-xl text-slate-600 dark:text-teal-300 hover:bg-slate-200 dark:hover:bg-teal-800/60 transition cursor-pointer"
-                                  title="Copiar enlace"
+                                  title="Copiar enlace de Google Drive"
+                                  aria-label="Copiar enlace de Google Drive"
                                 >
                                   {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                                 </button>
@@ -391,6 +384,7 @@ export default function SubjectDetailView({
                                   rel="noopener noreferrer"
                                   className="p-1.5 rounded-xl text-teal-600 dark:text-teal-400 hover:bg-slate-200 dark:hover:bg-teal-800/60 transition"
                                   title="Abrir en pestaña nueva de Google Drive"
+                                  aria-label="Abrir en pestaña nueva de Google Drive"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
                                 </a>
@@ -411,16 +405,6 @@ export default function SubjectDetailView({
           )}
         </div>
       </div>
-
-      {/* Visor Embebido de Documentos para PCs de Laboratorio - Arrastrable */}
-      {previewDoc && (
-        <DrivePreviewModal
-          isOpen={Boolean(previewDoc)}
-          title={previewDoc.title}
-          url={previewDoc.url}
-          onClose={() => setPreviewDoc(null)}
-        />
-      )}
     </section>
   );
 }
