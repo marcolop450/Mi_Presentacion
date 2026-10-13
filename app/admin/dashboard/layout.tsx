@@ -173,7 +173,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#dff0fa] dark:bg-[#061317] text-slate-900 dark:text-white transition-colors duration-200">
+    <div className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-[#dff0fa] dark:bg-[#061317] text-slate-900 dark:text-white transition-colors duration-200">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed bottom-6 right-6 z-[100000] p-4 rounded-2xl bg-slate-900/95 dark:bg-teal-950/95 text-white border border-teal-500/40 shadow-2xl backdrop-blur-md flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-200 text-xs font-semibold">
@@ -185,7 +185,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       {/* ------------------------------------------------------------- */}
       {/* BARRA SUPERIOR PARA MÓVILES (Responsiva)                      */}
       {/* ------------------------------------------------------------- */}
-      <header className="md:hidden flex items-center justify-between px-4 py-3.5 bg-white/90 dark:bg-[#07191d]/90 border-b border-slate-300 dark:border-teal-800/60 sticky top-0 z-30 backdrop-blur-md">
+      <header className="md:hidden shrink-0 flex items-center justify-between px-4 py-3.5 bg-white/95 dark:bg-[#07191d]/95 border-b border-slate-300 dark:border-teal-800/60 sticky top-0 z-30 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
           <Image src="/images/logo_kiris.png" alt="Logo KIRIS" width={32} height={32} />
           <div>
@@ -220,7 +220,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       {/* SIDEBAR JERÁRQUICO (ORDEN ADMINISTRADOR DE NEGOCIO)            */}
       {/* ------------------------------------------------------------- */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 max-w-[85vw] bg-white/95 dark:bg-[#07191d]/95 border-r border-slate-300 dark:border-teal-800/60 flex flex-col backdrop-blur-xl transition-transform duration-300 ease-out md:static md:translate-x-0 md:h-screen md:sticky md:top-0 md:z-10 md:w-72 shadow-2xl md:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 max-w-[85vw] h-full bg-white/95 dark:bg-[#07191d]/95 border-r border-slate-300 dark:border-teal-800/60 flex flex-col backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-out md:relative md:inset-auto md:z-10 md:w-72 md:h-full md:shadow-none md:translate-x-0 shrink-0 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -251,7 +251,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Contenedor Unificado con Scroll Suave (Sin scrollbars anidados que squisheen elementos) */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 touch-pan-y">
           {/* Insignia de Administrador Autenticado */}
           <div className="p-2.5 rounded-2xl bg-teal-50/70 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800/60 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-teal-600 text-white font-display font-bold flex items-center justify-center text-xs shadow-xs">
@@ -324,7 +324,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           <AdminAudioPlayer />
 
           {/* Footer del Sidebar con Utilidades y Cerrar Sesión */}
-          <div className="pt-3 border-t border-slate-200 dark:border-teal-900/60 space-y-2 pb-6">
+          <div className="pt-3 border-t border-slate-200 dark:border-teal-900/60 space-y-2 pb-8">
             <div className="flex items-center justify-between px-3 py-1.5">
               <span className="text-xs text-slate-500 dark:text-teal-300 font-medium">Tema Visual</span>
               <ThemeToggle />
@@ -354,10 +354,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ------------------------------------------------------------- */}
-      {/* CONTENIDO PRINCIPAL                                           */}
+      {/* CONTENIDO PRINCIPAL CON SCROLL INDEPENDIENTE                   */}
       {/* ------------------------------------------------------------- */}
-      <main className="flex-1 min-w-0 p-4 sm:p-5 lg:p-6 max-w-7xl mx-auto w-full relative">
-        {children}
+      <main className="flex-1 h-full min-w-0 overflow-y-auto overscroll-contain p-4 sm:p-5 lg:p-6 relative">
+        <div className="max-w-7xl mx-auto w-full pb-16">
+          {children}
+        </div>
       </main>
     </div>
   );
